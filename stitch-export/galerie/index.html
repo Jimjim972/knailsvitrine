@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>K'nails Beauty Institut - Gallery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#f9c5d1",
+                      "error": "#ba1a1a",
+                      "on-primary": "#ffffff",
+                      "on-primary-container": "#774f5a",
+                      "on-primary-fixed": "#2f121b",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#ecb9c5",
+                      "surface-container": "#eeeeee",
+                      "surface": "#f9f9f9",
+                      "inverse-on-surface": "#f0f1f1",
+                      "on-surface": "#1a1c1c",
+                      "secondary-fixed-dim": "#e9c176",
+                      "tertiary-fixed": "#ffd9e5",
+                      "primary-fixed": "#ffd9e1",
+                      "on-secondary-fixed-variant": "#5d4201",
+                      "tertiary": "#9d3a6b",
+                      "surface-container-high": "#e8e8e8",
+                      "tertiary-fixed-dim": "#ffb0cf",
+                      "primary": "#7b535e",
+                      "inverse-surface": "#2f3131",
+                      "on-tertiary": "#ffffff",
+                      "primary-fixed-dim": "#ecb9c5",
+                      "surface-tint": "#7b535e",
+                      "on-background": "#1a1c1c",
+                      "surface-variant": "#e2e2e2",
+                      "secondary": "#775a19",
+                      "background": "#f9f9f9",
+                      "secondary-fixed": "#ffdea5",
+                      "on-error": "#ffffff",
+                      "outline-variant": "#d3c2c5",
+                      "error-container": "#ffdad6",
+                      "surface-dim": "#dadada",
+                      "surface-container-highest": "#e2e2e2",
+                      "tertiary-container": "#ffc2d9",
+                      "surface-container-low": "#f3f3f4",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-fixed": "#3d0023",
+                      "on-tertiary-fixed-variant": "#7f2152",
+                      "on-secondary-fixed": "#261900",
+                      "on-primary-fixed-variant": "#613c46",
+                      "surface-bright": "#f9f9f9",
+                      "on-secondary-container": "#785a1a",
+                      "surface-container-lowest": "#ffffff",
+                      "on-surface-variant": "#504446",
+                      "outline": "#827476",
+                      "on-tertiary-container": "#983667",
+                      "secondary-container": "#fed488"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "20px",
+                      "gutter": "24px",
+                      "unit": "8px",
+                      "margin-desktop": "64px",
+                      "container-max": "1200px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "display-lg": [
+                              "Playfair Display"
+                      ],
+                      "title-md": [
+                              "Manrope"
+                      ],
+                      "headline-lg": [
+                              "Playfair Display"
+                      ],
+                      "label-sm": [
+                              "Manrope"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ],
+                      "headline-lg-mobile": [
+                              "Playfair Display"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "title-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.08em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .image-hover-scale {
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .group:hover .image-hover-scale {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg antialiased">
+<nav class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-b border-secondary/30 dark:border-secondary-fixed/30 shadow-sm dark:shadow-none fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop py-4">
+<div class="font-display-lg text-display-lg text-primary dark:text-primary-fixed-dim">
+            K'nails Beauty Institut
+        </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">Services</a>
+<a class="font-body-lg text-body-lg text-primary dark:text-primary-fixed-dim border-b-2 border-secondary font-bold" href="#">Gallery</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">Appointments</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">About Us</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-title-md text-title-md hover:bg-primary-container/20 transition-all duration-300 scale-95 hover:scale-100 hover:text-primary border border-transparent hover:border-primary shadow-[0_4px_14px_0_rgba(123,83,94,0.39)]">
+            Book Now
+        </button>
+</nav>
+<main class="pt-[140px] pb-32">
+<header class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto mb-16 text-center">
+<h1 class="font-display-lg text-display-lg text-primary mb-4">L'Art Sublimé</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                Explore a curated selection of our finest creations. A testament to meticulous care, premium products, and an unwavering dedication to elegant aesthetics.
+            </p>
+</header>
+<section class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto mb-32">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter auto-rows-[300px]">
+<div class="md:col-span-8 md:row-span-2 rounded-xl overflow-hidden relative group cursor-pointer border border-secondary/20 shadow-[0_8px_32px_rgba(157,58,107,0.06)]">
+<img alt="Featured Nail Art" class="w-full h-full object-cover image-hover-scale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLyM6eliVQXrgTI97AIzvl8WNPJ3aofw3sUoR_URdhQUg4ZNpNmz48duQMK_r7Q-uY3Wh8k93QYVO-tObC01RSQBFg5Ci7Mbu_uo4KjaWhlD3rGqMwqS51q00t_Sx68LvBvRqp4QuoTO_jFXSlxiLv5W-Z_aEhyvgpFTMwQDRrHwxlhNva9wfyexYxwROPUujksHk9wxFqVJdLVO1fZj7rbMDq6WI43PmOD0RF9NuhOhHqatuL-spg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="absolute bottom-6 left-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-4 group-hover:translate-y-0">
+<span class="inline-block bg-surface/90 text-primary px-4 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider mb-2">Signature Style</span>
+<h3 class="font-headline-lg text-headline-lg text-white">Minimalist Gold Accents</h3>
+</div>
+</div>
+<div class="md:col-span-4 rounded-xl overflow-hidden relative group cursor-pointer border border-secondary/20 shadow-[0_8px_32px_rgba(157,58,107,0.04)]">
+<img class="w-full h-full object-cover image-hover-scale" data-alt="A close-up shot of elegantly manicured hands resting on a soft plush white towel. The nails feature a delicate French tip variation using a soft blush pink base and a thin line of deep berry polish at the tip. The lighting is soft, diffused natural daylight streaming into a luxury salon setting, creating a serene and sophisticated mood. The overall aesthetic is clean, modern, and highly polished." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_KzmZ9ZjRazMoQ_-m1vAPUeCZORpIbAvgKrd4UKNYrB1Jl0yxjvpFHbcExROSE268zwhgyeMKKQfNq7tz8wicOZYYmuI9ZKtl3t2eIECNUgUJ7Q15UdJuG18u82ECblkqTmRgC5Yn6EYy0jbrjSBa0SZs4fN0IfZW_5MIEgNesvGhrseHX9dunsCEbLnUyAMM-DZO6XF43BCPAn4Y92_Eqsgk6XTCKI9aFFbNz4hOwTDRI-502t47"/>
+<div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+</div>
+<div class="md:col-span-4 rounded-xl overflow-hidden relative group cursor-pointer border border-secondary/20 shadow-[0_8px_32px_rgba(157,58,107,0.04)]">
+<img class="w-full h-full object-cover image-hover-scale" data-alt="A wide architectural shot of a luxury nail salon interior. The space is minimalist and breathless, featuring plush soft seating in pale blush tones against pristine white walls. Thin gold architectural details frame the mirrors. A subtle ambient light casts soft shadows across a polished marble floor. The mood is tranquil, exclusive, and high-end editorial." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpgw3aUYqWCneoN6JDJv6k3NhLvK1bR-q32KH-WaEZKAdTiyiQzA75RE80G9fy-6ZOJsC_YKZlwlH_wF42n_HcImBMz2nuWX94_Orp3gMIfkBxaag0Is_zQUQ8QGcm66zxvoOVRJDf1uykGKYI6_VetIgQ2n8gvlRV9dwPjHOtFXeRopIb3OMa5nz5U_miGGBM_xmIBuxC8TNAMzYwPcND7kEF8b3-6VYny4Y7hL5ZDi4p_ROUk4ih"/>
+<div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+</div>
+<div class="md:col-span-5 md:row-span-1 rounded-xl overflow-hidden relative group cursor-pointer border border-secondary/20 shadow-[0_8px_32px_rgba(157,58,107,0.04)]">
+<img class="w-full h-full object-cover image-hover-scale" data-alt="Detail shot of premium manicure tools and a bottle of high-end deep berry nail polish resting on a brushed gold tray. The background is slightly out of focus, showing a clean, bright, white-toned salon environment. The lighting highlights the rich color of the polish and the gleam of the gold tray, emphasizing a luxurious and professional self-care experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa-1sor-4wrklpcQ_lAEztPGGmn82Eiw5ntDM1Rq-2E4nqDmqYuxJaueFJ62CjzldlWbXNpNCoJPJBvWdnc-P9wdubSO1mLEBm7YrYVbol6mdyrUdR076d19OwLs6-Mq65e6w_cdQKvSkg2c6h50EwEplFgZRgHJIrMAJp1Gmzz8IAkEKtRhHU0ffkP8InxHffFplRLI_kxAI1LS5Z9gVKSYYgCtz00ytjOREcooJrmvn_bSOp94pw"/>
+<div class="absolute inset-0 glass-panel opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+<span class="font-title-md text-title-md text-primary bg-white/80 px-6 py-2 rounded-full">View Details</span>
+</div>
+</div>
+<div class="md:col-span-7 md:row-span-1 rounded-xl overflow-hidden relative group cursor-pointer border border-secondary/20 shadow-[0_8px_32px_rgba(157,58,107,0.04)]">
+<img class="w-full h-full object-cover image-hover-scale" data-alt="A macro photography shot focusing on intricate nail art. The design features a translucent, milky white base with incredibly delicate, hand-painted botanical motifs in a shimmering gold leaf. The lighting is studio-quality, crisp and bright, isolating the hand against a soft, creamy background to highlight the flawless execution and premium artistry of the manicure." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz9G9TMv33zrtICW6OWK0PZX741yNW-xxQ_cCJBVVxyYvEqWLhNQ7i2zEcVPTXo-jH4x254QbBnencY-fNO6CQzMX-4qUjN9TUfI5108FLMU6eXuloXJZzKTvuVv7Mb2h6wY8TjPhVztRlJaHG7tmPhzQRVV083rJIDiGZFmRdFeSrzEUsvgeI54w6OaJmWJsLysxsNZ-DQfLzhhg4D8HDRaCWlAvCmCRIFvH3f5geC9-yjxjPGNDA"/>
+<div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+</div>
+</div>
+</section>
+<section class="bg-surface-container-low py-24 relative overflow-hidden">
+<div class="absolute -top-40 -right-40 w-96 h-96 bg-primary-container rounded-full mix-blend-multiply filter blur-[100px] opacity-30"></div>
+<div class="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary-fixed rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto relative z-10">
+<div class="flex flex-col md:flex-row justify-between items-end mb-12">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface mb-2">Social Journal</h2>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                            Follow our daily inspirations @knails_institut
+                        </p>
+</div>
+<a class="mt-4 md:mt-0 font-title-md text-title-md text-primary border-b border-primary pb-1 hover:text-secondary hover:border-secondary transition-colors inline-block" href="#">View Full Feed</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="aspect-square rounded-lg overflow-hidden group cursor-pointer relative">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Instagram style photo: A chic flatlay showing a freshly manicured hand holding a delicate ceramic coffee cup. The nails are painted in a solid, glossy deep berry shade. The background is a crisp white marble cafe table. The natural sunlight creates soft, inviting shadows. The aesthetic is modern lifestyle luxury, focusing on everyday elegance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu5PdAbKVu4U1hJEAxNBdna25oIyG_dToTmNLVqcnvgkIrxUeAq9kaxXMVZIqD5_zrxjXpAaHHUG3DY8NruwHp45laHHofcxeQ5IIgArNAD87KqRIHhtKOxh8amQhy2cKgpdvvWc1_ueMjx1JS781CUTMEQc5c1sLefcf4CaDG5waqQ5ggwd5oSDOlpc6RyUjkGhcazalNrcrbK3uDyD3rcdBmLZXbuPwvcRiti-5bVYoq1ueBH7RO"/>
+<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden group cursor-pointer relative">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Instagram style photo: A close-up side profile of a perfectly sculpted almond-shaped nail. The finish is a matte soft blush color, providing a modern twist on a classic hue. The lighting is very soft and directional, highlighting the smooth, flawless apex of the nail extension. The background is a muted, warm gray to ensure the nail is the focal point." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5kJ9b160zGm7Pm5X93QI8anZQ_ulou3gmT5nv74UsuUjlF8GbIhXfuGWebYzSPiQtcA8jCh73S8PIRV9ZuSY1myDyb88rz1UOcJni4aVmNMvy8cJKGVjmnFJNqWRzfP6m8hB_sYoaKNGxawof8Ck3PGNXM21xgLtIItnLrMHu2Sl1sDKoo9xHygfnBrD80u4Rsii220gK0kWWhGtBZhq4Ut6lZoy59lMtZDbQRzAq7cRPGjSa_uYe"/>
+<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden group cursor-pointer relative">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Instagram style photo: A detailed shot of luxury skincare products used during a spa manicure service, arranged neatly on a pristine white counter. Jars with gold lids and sleek bottles containing scrubs and lotions are visible. A small arrangement of fresh white flowers sits next to them. The lighting is bright and airy, communicating hygiene, premium quality, and deep relaxation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqVEKJIyq17E7WHzW7nfGp5Oky7nBAPcgLWkuuvTtIzhtzMFeP2PDC8FLwJvauuQ5UXRdqnx2TjpAnFaEztXLwH2Q7jOko19QiBtfEfHcn6go135VOrtMLwGpYUZuEJgzNTj7NJ5XbSjcFPXDvriO_nUGHcc1RbK8PbtEyeUufv8WmZ_TlTKV8k51E9IyqzXxDGLsL8bIH6H5BfwSWrXpoA7__gSGH7j8wat9-gq_52ev5UmpVPrfr"/>
+<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden group cursor-pointer relative">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Instagram style photo: Two hands interlocked elegantly, showing off matching pedicures and manicures in a vibrant yet sophisticated shade of red-berry. The setting implies a relaxing vacation or high-end leisure activity, perhaps resting on a soft woven neutral throw blanket. The light is golden hour, casting a warm, luxurious glow over the skin and the polished nails." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxx9jwI_UOUPsWJJTBBONy5pFuSfidf26SPsqZFIHJp896RZ84yjvO_1iICE_LiVBGxtZAF2mlmTqjjEeQGGSIu3wPYEKJtKRH8-ZJ-DiuyfA7-SRM0VTl457OUVJkNcscVLZOPBYufNdg2DDlwLMdtiJVUFwzi8dBt0lBvJMuA8GF2fcjLD9lRyVJqu5R5e7-wVkl8GGZA58F00K96F7q9oBpgMmMj7-bjLPL_HG02vDeljJWRnJa"/>
+<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-surface-container-low dark:bg-surface-container-lowest border-t border-secondary/20 w-full py-16 px-margin-desktop grid grid-cols-1 md:grid-cols-4 gap-gutter font-body-md text-body-md text-secondary dark:text-secondary-fixed">
+<div class="flex flex-col gap-4">
+<div class="font-headline-lg text-headline-lg text-primary dark:text-primary-fixed-dim mb-4">
+                K'nails Beauty Institut
+            </div>
+<p class="text-on-surface-variant/80 max-w-xs">Elevating nail care to an art form. Experience pure indulgence in a serene setting.</p>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-title-md text-title-md text-primary mb-2">Explore</h4>
+<a class="text-on-surface-variant/80 hover:text-secondary dark:hover:text-secondary-fixed-dim underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant/80 hover:text-secondary dark:hover:text-secondary-fixed-dim underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-title-md text-title-md text-primary mb-2">Connect</h4>
+<a class="text-on-surface-variant/80 hover:text-secondary dark:hover:text-secondary-fixed-dim underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Contact Us</a>
+<a class="text-on-surface-variant/80 hover:text-secondary dark:hover:text-secondary-fixed-dim underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Opening Hours</a>
+</div>
+<div class="flex flex-col gap-3 justify-end">
+<p class="text-on-surface-variant/80 text-sm mt-auto">
+                © 2024 K'nails Beauty Institut. All rights reserved.
+            </p>
+</div>
+</footer>
+</body></html>

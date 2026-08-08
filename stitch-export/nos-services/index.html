@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Services - K'nails Beauty Institut</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#f9c5d1",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#774f5a",
+                        "on-primary-fixed": "#2f121b",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#ecb9c5",
+                        "surface-container": "#eeeeee",
+                        "surface": "#f9f9f9",
+                        "inverse-on-surface": "#f0f1f1",
+                        "on-surface": "#1a1c1c",
+                        "secondary-fixed-dim": "#e9c176",
+                        "tertiary-fixed": "#ffd9e5",
+                        "primary-fixed": "#ffd9e1",
+                        "on-secondary-fixed-variant": "#5d4201",
+                        "tertiary": "#9d3a6b",
+                        "surface-container-high": "#e8e8e8",
+                        "tertiary-fixed-dim": "#ffb0cf",
+                        "primary": "#7b535e",
+                        "inverse-surface": "#2f3131",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#ecb9c5",
+                        "surface-tint": "#7b535e",
+                        "on-background": "#1a1c1c",
+                        "surface-variant": "#e2e2e2",
+                        "secondary": "#775a19",
+                        "background": "#f9f9f9",
+                        "secondary-fixed": "#ffdea5",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#d3c2c5",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#dadada",
+                        "surface-container-highest": "#e2e2e2",
+                        "tertiary-container": "#ffc2d9",
+                        "surface-container-low": "#f3f3f4",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#3d0023",
+                        "on-tertiary-fixed-variant": "#7f2152",
+                        "on-secondary-fixed": "#261900",
+                        "on-primary-fixed-variant": "#613c46",
+                        "surface-bright": "#f9f9f9",
+                        "on-secondary-container": "#785a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#504446",
+                        "outline": "#827476",
+                        "on-tertiary-container": "#983667",
+                        "secondary-container": "#fed488"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "20px",
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "margin-desktop": "64px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Manrope"],
+                        "display-lg": ["Playfair Display"],
+                        "title-md": ["Manrope"],
+                        "headline-lg": ["Playfair Display"],
+                        "label-sm": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-lg-mobile": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "title-md": ["20px", { "lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; background-color: #f9f9f9; color: #1a1c1c; }
+        .glass-nav { background: rgba(249, 249, 249, 0.8); backdrop-filter: blur(12px); }
+        .btn-primary { background-color: #7b535e; color: #ffffff; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(123, 83, 94, 0.2); }
+        .btn-secondary { border: 1px solid #C5A059; color: #775a19; transition: background-color 0.2s ease; }
+        .btn-secondary:hover { background-color: rgba(197, 160, 89, 0.1); }
+        .card-image-overlay { background: linear-gradient(to top, rgba(255, 240, 243, 0.9) 0%, rgba(255, 240, 243, 0) 100%); }
+        .gold-border { border-color: rgba(197, 160, 89, 0.3); }
+        .service-card { transition: all 0.3s ease; }
+        .service-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(157, 58, 107, 0.06); }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-surface/80 backdrop-blur-md border-b border-secondary/30 shadow-sm transition-all duration-300" id="main-nav">
+<div class="flex items-center">
+<a class="font-display-lg text-headline-lg-mobile md:text-display-lg text-primary tracking-tight" href="#">K'nails Beauty Institut</a>
+</div>
+<!-- Desktop Nav -->
+<div class="hidden md:flex items-center space-x-8">
+<a class="font-body-lg text-body-lg text-primary border-b-2 border-secondary font-bold hover:bg-primary-container/20 transition-all duration-300 px-2 py-1" href="#">Services</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary hover:bg-primary-container/20 transition-all duration-300 px-2 py-1" href="#">Gallery</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary hover:bg-primary-container/20 transition-all duration-300 px-2 py-1" href="#">Appointments</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary hover:bg-primary-container/20 transition-all duration-300 px-2 py-1" href="#">About Us</a>
+</div>
+<div class="hidden md:flex items-center">
+<button class="btn-primary font-title-md text-title-md px-6 py-2.5 rounded-full scale-95 transition-transform hover:scale-100">Book Now</button>
+</div>
+<!-- Mobile Menu Toggle -->
+<button aria-label="Open Menu" class="md:hidden text-primary p-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+</nav>
+<main class="pt-[100px] md:pt-[120px] pb-24">
+<!-- Page Header -->
+<header class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto mb-16 md:mb-24 text-center">
+<h1 class="font-display-lg text-display-lg text-primary mb-4">Nos Prestations</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Découvrez notre carte de soins, une invitation à la détente et à la mise en beauté. Chaque prestation est réalisée avec une attention méticuleuse pour un résultat luxueux.</p>
+</header>
+<!-- Services Section: Onglerie -->
+<section class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto mb-24">
+<div class="flex flex-col md:flex-row items-end justify-between mb-12 border-b border-secondary/30 pb-4">
+<div>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-2 block">L'Art de la Perfection</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Onglerie &amp; Manucure</h2>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Image Card -->
+<div class="lg:col-span-1 rounded-xl overflow-hidden relative h-[400px] shadow-sm service-card group">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Close-up of elegant hands with a sophisticated light pink gel manicure featuring minimalist thin gold line art designs and tiny gold dots. Soft, blurred, luxurious bedroom or salon background with warm lighting, emphasizing the perfect glossy finish of the nails." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLyM6eliVQXrgTI97AIzvl8WNPJ3aofw3sUoR_URdhQUg4ZNpNmz48duQMK_r7Q-uY3Wh8k93QYVO-tObC01RSQBFg5Ci7Mbu_uo4KjaWhlD3rGqMwqS51q00t_Sx68LvBvRqp4QuoTO_jFXSlxiLv5W-Z_aEhyvgpFTMwQDRrHwxlhNva9wfyexYxwROPUujksHk9wxFqVJdLVO1fZj7rbMDq6WI43PmOD0RF9NuhOhHqatuL-spg"/>
+<div class="absolute inset-0 card-image-overlay flex flex-col justify-end p-6">
+<h3 class="font-title-md text-title-md text-primary mb-1">Signature K'nails</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">L'élégance jusqu'au bout des ongles.</p>
+</div>
+</div>
+<!-- Service List -->
+<div class="lg:col-span-2 flex flex-col justify-center gap-6 md:pl-8">
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="mb-4 sm:mb-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Manucure Russe</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Préparation méticuleuse de l'ongle et des cuticules pour un rendu net et une repousse retardée.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">45€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">45 min</span>
+</div>
+<button aria-label="Réserver Manucure Russe" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="absolute top-4 left-4 bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full font-label-sm text-[10px] uppercase">Populaire</div>
+<div class="mb-4 sm:mb-0 mt-4 sm:mt-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Pose Vernis Semi-Permanent</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Couleur éclatante et tenue impeccable jusqu'à 3 semaines. Large choix de teintes premium.</p>
+</div>
+<div class="flex items-center gap-6 mt-4 sm:mt-0">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">35€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">30 min</span>
+</div>
+<button aria-label="Réserver Vernis Semi-Permanent" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="mb-4 sm:mb-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Pose Complète Gel (Chablons)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Rallongement sur-mesure pour une forme parfaite et une solidité optimale.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">75€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">90 min</span>
+</div>
+<button aria-label="Réserver Pose Gel" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Services Section: Soins du corps -->
+<section class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto mb-24">
+<div class="flex flex-col md:flex-row items-end justify-between mb-12 border-b border-secondary/30 pb-4">
+<div>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-2 block">Détente Absolue</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Soins du Corps</h2>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter flex-row-reverse">
+<!-- Service List -->
+<div class="lg:col-span-2 flex flex-col justify-center gap-6 md:pr-8 order-2 lg:order-1">
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="mb-4 sm:mb-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Modelage Relaxant Sur-Mesure</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Massage profond aux huiles précieuses pour dénouer les tensions et apaiser l'esprit.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">85€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">60 min</span>
+</div>
+<button aria-label="Réserver Modelage" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="mb-4 sm:mb-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Gommage Corps Éclat</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Exfoliation douce pour une peau soyeuse, lumineuse et parfaitement hydratée.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">50€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">40 min</span>
+</div>
+<button aria-label="Réserver Gommage" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+</div>
+<!-- Image Card -->
+<div class="lg:col-span-1 rounded-xl overflow-hidden relative h-[400px] shadow-sm service-card group order-1 lg:order-2 mb-8 lg:mb-0">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A professional aesthetician in a light beige linen uniform is gently massaging a client's hand and arm. The client is wearing a plush white bathrobe. Setting is a modern, high-end spa with light marble countertops, frosted glass, and elegant amber glass product bottles. Serene and calming atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjwkFOft6x9C25fQuokC5PRekB__E9qAk591BVa_3khTaHaIgRO4RwvPIENUXqVnX4tQwDYL0nBt1Ty5D4pYtCoZmzY9pw5yaYXdrzY3k58VgUPG4A0kKAoa26QKcbp7lsya1Lqk3AhUBJVfZOuT1OuQGA_Zr7mKFuYZAM8KWaiwaMMOPadlEJ8pWN7EU_mFBS0Pc4c_pD96oYR0WuJ4RMuQO4iiLMxsFCKI2S8beop1BRWae8FNzv"/>
+<div class="absolute inset-0 card-image-overlay flex flex-col justify-end p-6">
+<h3 class="font-title-md text-title-md text-primary mb-1">Rituels Corps</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Une parenthèse de bien-être.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Services Section: Esthétique -->
+<section class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row items-end justify-between mb-12 border-b border-secondary/30 pb-4">
+<div>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-2 block">Soins Premium</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Esthétique &amp; Visage</h2>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Image Card -->
+<div class="lg:col-span-1 rounded-xl overflow-hidden relative h-[400px] shadow-sm service-card group">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A beautifully styled flat lay of luxury cosmetic products on a soft pink marble slab resting on silky rose-gold fabric. Products include a rose gold serum bottle with a white dropper, a frosted glass cream jar with a rose gold lid, and a classic lipstick. Elegant, premium beauty aesthetic with soft natural light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3wPRZaDSe8lqJuaezMgvQ7oYZ7Mzly6DC4u4-iU876nX1oY7OqRBNofXPjnoWZdb_5MTc2cEXlOu30GteQo7k6WQRaW9DwSEx-Dmkzj4o1sC4x16BaohHEXJwgGe6HTwE616TcEr5CbPLy2fDo_f6SHvafHYH9BDKWrpkIYVnIXUUyjhiZFx8WAdS4XFiow1dsGHHz4u4t5rBTh8nQz9veerdj_bFVHIpAJ-3RNPLvi-uu-0ru5vV"/>
+<div class="absolute inset-0 card-image-overlay flex flex-col justify-end p-6">
+<h3 class="font-title-md text-title-md text-primary mb-1">Soins Visage</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Des protocoles experts pour sublimer votre peau.</p>
+</div>
+</div>
+<!-- Service List -->
+<div class="lg:col-span-2 flex flex-col justify-center gap-6 md:pl-8">
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="mb-4 sm:mb-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Soin Signature "Glow"</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Soin complet hydratant et illuminateur. Nettoyage profond, modelage et masque spécifique.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">95€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">75 min</span>
+</div>
+<button aria-label="Réserver Soin Glow" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="absolute top-4 left-4 bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded-full font-label-sm text-[10px] uppercase">Nouveau</div>
+<div class="mb-4 sm:mb-0 mt-4 sm:mt-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Lifting Colombien (Visage)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Technique non invasive pour raffermir, lisser les ridules et redessiner l'ovale du visage.</p>
+</div>
+<div class="flex items-center gap-6 mt-4 sm:mt-0">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">120€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">60 min</span>
+</div>
+<button aria-label="Réserver Lifting Colombien" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+<!-- Item -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-lowest rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="mb-4 sm:mb-0">
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Beauté du Regard (Rehaussement &amp; Teinture)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Recourbement naturel des cils et coloration pour un regard intensifié sans mascara.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<span class="block font-title-md text-title-md text-primary">65€</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">60 min</span>
+</div>
+<button aria-label="Réserver Beauté du Regard" class="btn-secondary px-4 py-2 rounded-full font-label-sm text-label-sm uppercase">Réserver</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-16 px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-4 gap-gutter bg-surface-container-low border-t border-secondary/20">
+<div class="md:col-span-1 mb-8 md:mb-0">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-4">K'nails Beauty Institut</h2>
+<p class="font-body-md text-body-md text-secondary">L'excellence de la beauté, à votre service.</p>
+</div>
+<div class="flex flex-col space-y-4">
+<h3 class="font-title-md text-title-md text-on-surface mb-2">Informations</h3>
+<a class="font-body-md text-body-md text-on-surface-variant/80 hover:text-secondary underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant/80 hover:text-secondary underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col space-y-4">
+<h3 class="font-title-md text-title-md text-on-surface mb-2">Nous Contacter</h3>
+<a class="font-body-md text-body-md text-on-surface-variant/80 hover:text-secondary underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Contact Us</a>
+<p class="font-body-md text-body-md text-on-surface-variant/80">123 Avenue de la Beauté, Paris</p>
+<p class="font-body-md text-body-md text-on-surface-variant/80">+33 1 23 45 67 89</p>
+</div>
+<div class="flex flex-col space-y-4">
+<h3 class="font-title-md text-title-md text-on-surface mb-2">Horaires</h3>
+<a class="font-body-md text-body-md text-on-surface-variant/80 hover:text-secondary underline decoration-secondary/30 opacity-80 hover:opacity-100 transition-opacity" href="#">Opening Hours</a>
+<p class="font-body-md text-body-md text-on-surface-variant/80">Mar - Sam: 10h00 - 19h00</p>
+<p class="font-body-md text-body-md text-on-surface-variant/80">Fermé le Lundi et Dimanche</p>
+</div>
+<div class="col-span-1 md:col-span-4 mt-12 pt-8 border-t border-secondary/10 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant/60">© 2024 K'nails Beauty Institut. All rights reserved.</p>
+</div>
+</footer>
+<script>
+        // Simple scroll effect for navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('main-nav');
+            if (window.scrollY > 10) {
+                nav.classList.add('shadow-md');
+                nav.classList.replace('bg-surface/80', 'bg-surface/95');
+            } else {
+                nav.classList.remove('shadow-md');
+                nav.classList.replace('bg-surface/95', 'bg-surface/80');
+            }
+        });
+    </script>
+</body></html>
