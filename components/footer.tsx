@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 
-export function Footer() {
+async function getCurrentYear() {
+  "use cache";
+  cacheLife("days");
+  return new Date().getFullYear();
+}
+
+export async function Footer() {
+  const currentYear = await getCurrentYear();
   return (
     <footer className="site-footer">
       <div className="footer-grid">
@@ -25,7 +33,7 @@ export function Footer() {
           <p>Fermé le lundi et le dimanche</p>
         </div>
       </div>
-      <p className="copyright">© {new Date().getFullYear()} K&apos;nails Beauty Institut. Tous droits réservés.</p>
+      <p className="copyright">© {currentYear} K&apos;nails Beauty Institut. Tous droits réservés.</p>
     </footer>
   );
 }

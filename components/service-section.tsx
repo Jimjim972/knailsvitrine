@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 export type Service = {
+  id: string;
   name: string;
   description: string;
-  price: string;
-  duration: string;
-  badge?: string;
+  priceLabel: string;
+  durationLabel: string | null;
+  badge: string | null;
 };
 
 type ServiceSectionProps = {
@@ -55,8 +56,9 @@ export function ServiceSection({
         </div>
 
         <div className="service-list">
+          {services.length === 0 && <p className="service-empty">Aucune prestation n’est disponible dans cette catégorie pour le moment.</p>}
           {services.map((service) => (
-            <article className="service-card" key={service.name}>
+            <article className="service-card" key={service.id}>
               {service.badge && <span className="badge">{service.badge}</span>}
               <div className="service-copy">
                 <h3>{service.name}</h3>
@@ -64,8 +66,8 @@ export function ServiceSection({
               </div>
               <div className="service-action">
                 <div>
-                  <strong>{service.price}</strong>
-                  <span>{service.duration}</span>
+                  <strong>{service.priceLabel}</strong>
+                  {service.durationLabel && <span>{service.durationLabel}</span>}
                 </div>
                 <Link href="/contact" aria-label={`Réserver ${service.name}`}>
                   Réserver

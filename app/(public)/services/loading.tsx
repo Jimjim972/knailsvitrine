@@ -1,0 +1,1 @@
+export default function LoadingPublicServices() { return <main className="page-main"><div className="page-heading" aria-busy="true"><h1>Nos Prestations</h1><p role="status">Chargement des prestations…</p></div><div className="content-shell public-services-loading" aria-hidden="true"><span /><span /><span /></div></main>; }

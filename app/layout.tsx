@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Playfair_Display } from "next/font/google";
 import type { ReactNode } from "react";
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -30,9 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="fr" className={`${manrope.variable} ${playfair.variable}`}>
       <body>
-        <Header />
         {children}
-        <Footer />
       </body>
     </html>
   );

@@ -1,0 +1,1 @@
+export default function LoadingServices() { return <main className="admin-main content-shell" aria-busy="true"><p className="admin-status" role="status">Chargement des prestations…</p><div className="admin-loading-list" aria-hidden="true"><span /><span /><span /></div></main>; }

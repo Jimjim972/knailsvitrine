@@ -2,23 +2,49 @@
   "name": "knails-vitrine",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --test --experimental-strip-types tests/unit/auth/*.test.ts tests/unit/services/*.test.ts",
+    "test:e2e:auth": "playwright test tests/admin-auth",
+    "test:e2e:services": "playwright test tests/services-management",
+    "test:e2e:services:scenarios": "node scripts/run-services-scenario-tests.mjs",
+    "supabase:reset": "supabase db reset --local",
+    "supabase:test:db": "supabase test db --local supabase/tests/database/01_schema_constraints.sql supabase/tests/database/02_public_access.sql supabase/tests/database/03_admin_table_access.sql supabase/tests/database/04_storage_policies.sql supabase/tests/database/05_foundation_inventory.sql supabase/tests/database/06_scale_and_order.sql supabase/tests/database/07_admin_authentication.sql supabase/tests/database/08_services_management.sql",
+    "supabase:test:auth": "node scripts/check-auth-signup.mjs",
+    "supabase:test:storage": "node scripts/check-supabase-storage.mjs",
+    "supabase:lint": "supabase db lint --local --schema public,private --level warning --fail-on error",
+    "supabase:advisors": "supabase db advisors --local --type all --level warn --fail-on error",
+    "supabase:types:generate": "supabase gen types typescript --local --schema public > lib/supabase/database.types.ts",
+    "supabase:types:check": "node scripts/check-types-drift.mjs",
+    "foundation:check": "node scripts/run-foundation-checks.mjs",
+    "auth:check": "node scripts/check-admin-auth.mjs",
+    "services:check": "node scripts/check-services-management.mjs",
+    "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.2",
     "next": "16.3.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@playwright/test": "1.62.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.0",
+    "supabase": "2.112.0",
     "typescript": "^5.8.0"
   }
 }
