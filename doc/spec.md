@@ -144,7 +144,9 @@ Les trois catégories et leur présentation visuelle restent configurées dans l
 | `AUTH-03` | Rediriger un utilisateur non connecté vers `/admin/connexion`. |
 | `AUTH-04` | Refuser les opérations sensibles côté serveur et côté base, même si l'interface est contournée. |
 | `AUTH-05` | Permettre une déconnexion explicite. |
-| `AUTH-06` | Ne jamais exposer une route d'inscription publique. |
+| `AUTH-06` | Désactiver toute auto-inscription au niveau de Supabase Auth ; l'absence de route ou d'interface publique ne suffit pas. |
+| `AUTH-07` | Refuser au prochain contrôle toute session supprimée, expirée ou privée du rôle administrateur courant, même si son ancien JWT affirme encore ce rôle. |
+| `AUTH-08` | Garder les réponses `/admin` privées, non stockables et isolées de tout cache partagé. |
 
 ### 7.6 Contact
 
@@ -171,7 +173,7 @@ Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remp
 - la catégorie appartient à une liste fermée définie dans l'application ;
 - le prix est positif ou nul lorsqu'il est renseigné ;
 - le type de prix vaut `fixed`, `starting_at` ou `quote` ;
-- le prix peut être vide uniquement lorsque le type vaut `quote` ;
+- `fixed` et `starting_at` exigent un prix renseigné ; `quote` exige un prix absent ;
 - la durée est exprimée en minutes, facultative, et comprise entre 5 et 600 minutes ;
 - le badge est facultatif et limité à 40 caractères ;
 - l'ordre d'affichage est un entier positif ou nul ;
@@ -299,7 +301,7 @@ Pour limiter les crédits Netlify, les images déjà compressées peuvent être 
 | `nom` | `text` | Obligatoire, longueur contrôlée |
 | `description` | `text` | Obligatoire |
 | `categorie` | `text` | Obligatoire, valeur contrôlée |
-| `prix` | `numeric(10,2)` | Facultatif, supérieur ou égal à zéro |
+| `prix` | `numeric` | Facultatif, de 0 à 99 999 999,99 avec au plus deux décimales ; les valeurs plus précises sont refusées sans arrondi |
 | `type_prix` | `text` | Obligatoire, `fixed`, `starting_at` ou `quote` |
 | `duree_minutes` | `integer` | Facultatif, valeur positive |
 | `badge` | `text` | Facultatif |
@@ -311,8 +313,8 @@ Pour limiter les crédits Netlify, les images déjà compressées peuvent être 
 
 Index recommandés :
 
-- index sur `(actif, categorie, ordre_affichage)` pour la lecture publique ;
-- index simple sur `created_at` si nécessaire pour l'administration.
+- index partiel `prestations_public_category_order_idx` sur `(categorie, ordre_affichage, created_at, id)` lorsque `actif = true` ;
+- aucun index d'administration supplémentaire avant qu'une mesure réelle ne le justifie au volume du MVP.
 
 ### 10.2 Table `photos_galerie`
 
@@ -334,7 +336,7 @@ Index recommandés :
 | `created_at` | `timestamptz` | Obligatoire, date serveur par défaut |
 | `updated_at` | `timestamptz` | Obligatoire, date serveur par défaut |
 
-Index recommandé sur `(actif, variante_affichage, ordre_affichage)`.
+Index partiel `photos_galerie_public_variant_order_idx` sur `(variante_affichage, ordre_affichage, created_at, id)` lorsque `actif = true`.
 
 ## 11. Sécurité
 
@@ -359,7 +361,9 @@ Index recommandé sur `(actif, variante_affichage, ordre_affichage)`.
 | Métadonnées des photos inactives | Aucun accès | Aucun accès | Lecture |
 | Envoi/remplacement/suppression de fichiers | Refusé | Refusé | Autorisé |
 
-Le rôle administrateur doit provenir de `app_metadata`, contrôlé par le serveur, et jamais de `user_metadata`, modifiable par l'utilisateur. Une modification de rôle nécessite un rafraîchissement ou une révocation appropriée des sessions, car les informations du JWT ne sont pas immédiatement actualisées.
+Le rôle administrateur provient de `app_metadata`, contrôlé par le serveur, et jamais de `user_metadata`, modifiable par l'utilisateur. Le prédicat serveur relit la valeur protégée courante dans Supabase Auth au lieu d'autoriser depuis le rôle potentiellement ancien du JWT : un retrait du rôle prend donc effet dès le prochain contrôle.
+
+Le même prédicat exige que le claim `session_id` référence encore une session appartenant à `auth.uid()` et non expirée. Un ancien JWT admin perd ainsi les droits privilégiés dès que son rôle, sa session ou son expiration ne satisfait plus l'autorité courante.
 
 Les politiques d'actualisation Storage doivent tenir compte du fait qu'un remplacement de fichier nécessite les droits `INSERT`, `SELECT` et `UPDATE`. La suppression nécessite également sa politique dédiée.
 
@@ -434,6 +438,7 @@ La version initiale cible les versions modernes de Chrome, Safari, Firefox et Ed
 - une erreur d'administration conserve les données déjà saisies lorsque cela est possible ;
 - une erreur d'authentification ne précise pas si l'adresse e-mail existe ;
 - une erreur d'envoi de fichier distingue validation, réseau, quota et autorisation ;
+- les contrôles techniques de la fondation classent chaque échec principal dans exactement une catégorie parmi validation, autorisation, droit d'accès et erreur interne, sans exposer de secret ;
 - les erreurs serveur sont visibles dans les journaux Netlify ;
 - les erreurs de base, d'authentification et de Storage sont consultables dans Supabase ;
 - aucun mot de passe, jeton, cookie ou contenu sensible ne doit être écrit dans les journaux.
@@ -473,6 +478,9 @@ Les scénarios suivants doivent être exécutés avec les rôles réels :
 6. l'administrateur peut remplacer un fichier Storage ;
 7. la suppression d'une photo retire la ligne et le fichier ;
 8. aucune clé secrète n'apparaît dans le bundle du navigateur.
+9. une auto-inscription appelée directement avec la clé publiable est refusée sans créer de compte.
+
+La fondation Supabase peut vérifier séparément les droits de suppression de la ligne et du fichier. Le scénario 7 reste le critère du futur workflow applicatif de galerie, qui devra coordonner les deux ressources et traiter les échecs partiels.
 
 ### 15.3 Vérifications fonctionnelles
 

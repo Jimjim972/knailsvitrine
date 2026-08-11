@@ -64,16 +64,29 @@ Les valeurs suivantes devront être configurées localement et dans Netlify :
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SERVICE_SUCCESS_FLASH_SECRET=
 ```
 
-Une clé secrète ou `service_role` ne doit jamais être exposée dans une variable préfixée par `NEXT_PUBLIC_` ni envoyée au navigateur.
+`SERVICE_SUCCESS_FLASH_SECRET` est une valeur aléatoire serveur d'au moins 32 caractères, distincte par environnement. Elle authentifie les confirmations ponctuelles après une mutation de prestation et doit être stockée comme variable sensible dans Netlify, sans préfixe `NEXT_PUBLIC_`, sans valeur versionnée et sans envoi au navigateur. Une clé `service_role` ne doit jamais être exposée dans une variable préfixée par `NEXT_PUBLIC_` ni envoyée au navigateur.
+
+La validation accepte l'URL HTTP générée par la pile Supabase locale uniquement pour un hôte loopback exact (`localhost`, `127.0.0.1` ou `[::1]`). Toute URL Supabase distante configurée dans Netlify doit utiliser HTTPS.
+
+La configuration Auth versionnée garde le fournisseur email/mot de passe actif pour les comptes existants créés par maintenance, tout en désactivant globalement les nouvelles inscriptions ainsi que les inscriptions SMS et anonymes. Son équivalent hébergé doit être appliqué uniquement dans un déploiement autorisé vers un projet cible vérifié — après contrôle de la syntaxe installée, `supabase config push --project-ref <verified-ref>` est la commande CLI prévue — puis contrôlé par une tentative directe avec la clé publiable. Le fichier local ne prouve pas à lui seul l'état du service hébergé et aucune mutation distante n'est réalisée par la fondation.
+
+## Socle local versionné
+
+La fondation utilise Node.js 22 LTS, Supabase CLI 2.112.0, `@supabase/supabase-js` 2.112.2, `@supabase/ssr` 0.12.4 et Zod 4.4.3. Les versions sont épinglées dans le projet afin que la migration, les types et les contrôles restent reproductibles.
+
+`supabase/config.toml` décrit uniquement la pile locale : bucket public `galerie` limité à 8 MiB pour JPEG, PNG et WebP, fermeture des créations publiques de comptes et plafond local de 100 demandes de connexion/inscription par cinq minutes pour que la matrice E2E reste déterministe sans tester le 429 par épuisement. Le rapport `npm run foundation:check` réinitialise cette pile, vérifie contraintes, RLS, Auth, Storage et types, puis exécute lint, TypeScript, build et scan de secrets. `npm run auth:check` ajoute les contrats unitaires et la matrice Chromium/WebKit/Axe. Aucun de ces scripts ne pousse une configuration vers un projet hébergé.
+
+Netlify prend en charge les Server Actions via son adaptateur OpenNext sans ancien flag expérimental. Aucun `allowedOrigins` large, clé de chiffrement Server Actions stable ou élargissement de taille de corps n'est ajouté pour 002. La preview Netlify, les cookies derrière CDN, l'isolation `private, no-store`, le comportement d'un onglet conservé entre deux déploiements et le risque de 429 lié à une sortie partagée restent des gates de déploiement, pas des propriétés prétendues par les seuls tests locaux.
 
 ## Déploiement prévu
 
 1. Stocker le projet dans un dépôt GitHub.
 2. Importer le dépôt dans Netlify.
 3. Laisser Netlify détecter et construire l'application Next.js.
-4. Configurer les variables d'environnement Supabase dans Netlify.
+4. Configurer les variables d'environnement Supabase et le secret serveur de confirmation dans Netlify.
 5. Vérifier la connexion, les opérations d'administration et l'affichage des images.
 6. Connecter le domaine personnalisé et activer le HTTPS.
 

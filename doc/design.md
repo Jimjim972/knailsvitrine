@@ -83,9 +83,9 @@ Le design doit rester élégant et chaleureux. Il ne doit pas devenir clinique, 
 - Ne pas ajouter de couleur saturée ou de dégradé multicolore sans faire évoluer explicitement le système de design.
 - Ne pas utiliser la couleur comme seul moyen d'indiquer une erreur, un succès, un statut actif ou une sélection.
 
-### 4.3 Couleurs d'état à ajouter pour l'administration
+### 4.3 Couleurs d'état de l'administration
 
-Le frontend public ne définit pas encore tous les états nécessaires au CRUD. Les tokens suivants sont des extensions recommandées, à valider par un contrôle WCAG avant implémentation :
+Les tokens suivants sont implémentés comme variables CSS pour les états d'authentification et seront réutilisés par le futur CRUD :
 
 | Rôle | Texte | Fond | Usage |
 | --- | --- | --- | --- |
@@ -94,7 +94,7 @@ Le frontend public ne définit pas encore tous les états nécessaires au CRUD. 
 | Avertissement | `#5d4201` | `#fed488` | Confirmation et action à risque |
 | Information | `#613c46` | `#fff0f3` | Aide contextuelle et état neutre |
 
-Ces couleurs doivent devenir des variables CSS si elles sont effectivement ajoutées. Éviter les valeurs dispersées dans les composants.
+Le focus administratif utilise `--gold`, suffisamment contrasté, et non `--gold-light`. Éviter les valeurs dispersées dans les composants.
 
 ## 5. Typographie
 
@@ -441,7 +441,7 @@ Règles :
 
 ## 12. Extension du design à l'administration
 
-L'administration n'existe pas encore. Elle doit prolonger la marque sans reproduire la mise en scène éditoriale du site public.
+L'authentification et l'accueil administratif minimal prolongent la marque sans reproduire la mise en scène éditoriale du site public. Les règles CRUD ci-dessous restent la cible des prochaines fonctionnalités.
 
 ### 12.1 Principes
 
@@ -454,14 +454,15 @@ L'administration n'existe pas encore. Elle doit prolonger la marque sans reprodu
 
 ### 12.2 Structure recommandée
 
-L'espace `/admin` doit comporter :
+L'espace `/admin` livré dans 002 comporte :
 
 - une barre supérieure avec la marque, le contexte « Administration » et la déconnexion ;
-- une navigation vers Tableau de bord, Prestations et Galerie ;
-- un titre de page avec une action principale ;
+- un accueil protégé minimal sans navigation Prestations/Galerie factice ;
+- une page `/admin/connexion` autonome, sans Header/Footer publics, avec une carte de largeur contenue ;
 - une zone de contenu d'une largeur maximale cohérente avec `--content-width` ;
-- des cartes ou tableaux adaptatifs ;
 - une zone persistante ou clairement visible pour les messages de réussite et d'erreur.
+
+La navigation Tableau de bord, Prestations et Galerie ainsi que les tableaux adaptatifs ne sont ajoutés que lorsque leurs routes deviennent fonctionnelles. Une déconnexion distante non confirmée reste visible et réessayable dans son formulaire sans annoncer de succès.
 
 ### 12.3 Listes de gestion
 
@@ -482,6 +483,7 @@ Sur mobile, chaque ligne doit devenir une carte lisible. Les actions doivent con
 - indiquer les champs obligatoires ;
 - afficher l'erreur sous le champ correspondant ;
 - conserver les valeurs après une erreur récupérable ;
+- placer le focus initial sur le champ « Nom » à l'ouverture d'un formulaire de création ou de modification ;
 - placer l'action principale en fin de formulaire ;
 - séparer visuellement les actions destructrices ;
 - prévisualiser une image avant l'envoi ;
@@ -570,6 +572,7 @@ Avant de considérer une interface terminée, vérifier :
 - texte courant suffisamment contrasté ;
 - focus visible sur toutes les actions ;
 - interactions utilisables au clavier et sur écran tactile ;
+- parcours critique contrôlé manuellement sur Safari mobile réel et Firefox, avec annonce des états vérifiée par une technologie d'assistance disponible ;
 - aucun décalage de mise en page provoqué par les images ;
 - `sizes` adapté pour chaque image responsive ;
 - survols sans déplacement du contenu voisin ;
