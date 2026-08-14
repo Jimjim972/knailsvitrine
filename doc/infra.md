@@ -33,7 +33,7 @@ Vercel Hobby peut rester utile pour les tests ou les prévisualisations, mais le
 - le site peut être suspendu jusqu'au prochain cycle si tous les crédits sont consommés ;
 - aucun dépassement payant automatique sur l'offre Free.
 
-Pour limiter la consommation Netlify, les photos seront diffusées directement depuis Supabase Storage.
+Les fichiers restent dans Supabase Storage, mais le bucket galerie est privé et les octets sont relayés sans transformation par une Route Handler Netlify qui réautorise chaque demande. Le trafic et les invocations correspondants doivent donc être surveillés dans le budget Free.
 
 ### Supabase Free
 
@@ -48,14 +48,18 @@ Une quarantaine de prestations occupera une quantité négligeable d'espace en b
 
 ## Gestion des photos
 
-Avant l'envoi, les images devront idéalement être :
+Avant l'envoi, les images doivent être :
 
-- redimensionnées à une largeur maximale proche de 1 600 px ;
+- inspectées avant décodage et refusées au-delà de 25 000 000 pixels ou de 8 192 px par côté ;
+- redimensionnées à un côté le plus long de 1 600 px maximum sans agrandissement ;
 - converties en WebP ;
-- compressées autour de 150 à 400 Ko ;
+- converties en sRGB, débarrassées de leurs métadonnées et encodées aux qualités 0,85, 0,80 ou 0,75 ;
+- compressées autour de 150 à 400 Ko, avec un maximum de 1 Mio et un plancher de réduction de 1 200 px pour les originaux qui atteignent cette dimension ;
 - accompagnées d'un texte alternatif utile pour l'accessibilité et le référencement.
 
 Avec des fichiers d'environ 300 Ko, le quota de 1 Go permet théoriquement de stocker plusieurs milliers de photos. Une marge doit néanmoins être conservée pour les remplacements et les autres médias.
+
+L'original de 8 MiB maximum est traité dans le navigateur et envoyé directement à Supabase Storage. Avant publication, la fonction Netlify relit une fois le WebP final limité à 1 Mio pour valider ses octets. Ensuite chaque affichage autorisé transite par une Route Handler même origine, sans réencodage et avec `Cache-Control: private, no-store`, afin que le masquage révoque les octets dès la requête suivante. Les opérations `pending` depuis au moins 10 minutes et les fichiers absents sont audités uniquement par des Server Actions réautorisées, sans tâche planifiée ni service externe supplémentaire dans le MVP.
 
 ## Variables d'environnement
 
@@ -67,6 +71,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SERVICE_SUCCESS_FLASH_SECRET=
 ```
 
+La maintenance ponctuelle du bucket hébergé utilise séparément `SUPABASE_GALLERY_CONFIG_URL`, `SUPABASE_GALLERY_CONFIG_PROJECT_REF` et `SUPABASE_GALLERY_CONFIG_SECRET_KEY` depuis `.env.gallery-config.example`. La dernière accepte uniquement une clé Supabase dédiée au format `sb_secret_...`, créée pour cette opération ; la clé JWT historique `service_role` est refusée. Le script exige la concordance explicite de l'URL et de la référence, masque la clé dans ses sorties et relit le flag privé, la limite 8 Mio et les MIME avant succès. Ces variables ne sont jamais configurées dans Netlify, `.env.local`, l'application ou le bootstrap CRUD et ne sont pas versionnées ; la clé est révoquée après la configuration vérifiée et son ancien jeton doit alors échouer. En local, le script accepte uniquement une cible loopback et vérifie `supabase/config.toml` avec les credentials éphémères de la CLI.
+
 `SERVICE_SUCCESS_FLASH_SECRET` est une valeur aléatoire serveur d'au moins 32 caractères, distincte par environnement. Elle authentifie les confirmations ponctuelles après une mutation de prestation et doit être stockée comme variable sensible dans Netlify, sans préfixe `NEXT_PUBLIC_`, sans valeur versionnée et sans envoi au navigateur. Une clé `service_role` ne doit jamais être exposée dans une variable préfixée par `NEXT_PUBLIC_` ni envoyée au navigateur.
 
 La validation accepte l'URL HTTP générée par la pile Supabase locale uniquement pour un hôte loopback exact (`localhost`, `127.0.0.1` ou `[::1]`). Toute URL Supabase distante configurée dans Netlify doit utiliser HTTPS.
@@ -75,11 +81,11 @@ La configuration Auth versionnée garde le fournisseur email/mot de passe actif 
 
 ## Socle local versionné
 
-La fondation utilise Node.js 22 LTS, Supabase CLI 2.112.0, `@supabase/supabase-js` 2.112.2, `@supabase/ssr` 0.12.4 et Zod 4.4.3. Les versions sont épinglées dans le projet afin que la migration, les types et les contrôles restent reproductibles.
+La fondation utilise Node.js 22 LTS, Supabase CLI 2.112.0, `@supabase/supabase-js` 2.112.2, `@supabase/ssr` 0.12.4 et Zod 4.4.3. Les versions sont épinglées dans le projet afin que la migration, les types et les contrôles restent reproductibles. La galerie ajoute `sharp@0.35.3`, épinglé exactement dans `package.json` et `package-lock.json` uniquement comme dépendance de développement pour convertir les neuf images initiales ; un contrôle interdit son import hors `scripts/bootstrap-gallery.mjs`, afin qu'il n'entre ni dans le bundle navigateur ni dans le traitement d'image du runtime Netlify. Le bootstrap contrôle un manifeste SHA-256 et utilise une session administrateur normale, jamais `service_role`.
 
-`supabase/config.toml` décrit uniquement la pile locale : bucket public `galerie` limité à 8 MiB pour JPEG, PNG et WebP, fermeture des créations publiques de comptes et plafond local de 100 demandes de connexion/inscription par cinq minutes pour que la matrice E2E reste déterministe sans tester le 429 par épuisement. Le rapport `npm run foundation:check` réinitialise cette pile, vérifie contraintes, RLS, Auth, Storage et types, puis exécute lint, TypeScript, build et scan de secrets. `npm run auth:check` ajoute les contrats unitaires et la matrice Chromium/WebKit/Axe. Aucun de ces scripts ne pousse une configuration vers un projet hébergé.
+`supabase/config.toml` décrit uniquement la pile locale : bucket privé `galerie` limité à 8 MiB pour JPEG, PNG et WebP, fermeture des créations publiques de comptes et plafond local de 100 demandes de connexion/inscription par cinq minutes pour que la matrice E2E reste déterministe sans tester le 429 par épuisement. La politique de lecture privée autorise uniquement le téléchargement d'un chemin lié à une photo active et `ready`, jamais la liste anonyme. Pour une cible hébergée explicitement autorisée, un script d'infrastructure configure/vérifie le flag privé par l'API Storage avec la clé `sb_secret_...` ponctuelle décrite ci-dessus, jamais chargée par Netlify, le bootstrap ou le navigateur ; aucune migration ne modifie directement `storage.buckets`. Le rapport `npm run foundation:check` réinitialise cette pile, vérifie contraintes, RLS, Auth, Storage et types, puis exécute lint, TypeScript, build et scan de secrets. `npm run auth:check` ajoute les contrats unitaires et la matrice Chromium/WebKit/Axe. Aucun de ces scripts ne pousse une configuration vers un projet hébergé.
 
-Netlify prend en charge les Server Actions via son adaptateur OpenNext sans ancien flag expérimental. Aucun `allowedOrigins` large, clé de chiffrement Server Actions stable ou élargissement de taille de corps n'est ajouté pour 002. La preview Netlify, les cookies derrière CDN, l'isolation `private, no-store`, le comportement d'un onglet conservé entre deux déploiements et le risque de 429 lié à une sortie partagée restent des gates de déploiement, pas des propriétés prétendues par les seuls tests locaux.
+Netlify prend en charge les Server Actions via son adaptateur OpenNext sans ancien flag expérimental. Aucun `allowedOrigins` large, clé de chiffrement Server Actions stable ou élargissement de taille de corps n'est ajouté pour 002. La preview Netlify, les cookies derrière CDN, l'isolation `private, no-store`, le comportement d'un onglet conservé entre deux déploiements et le risque de 429 lié à une sortie partagée restent des gates de déploiement, pas des propriétés prétendues par les seuls tests locaux. Pour la galerie, le budget reproductible utilise neuf objets de 1 Mio : au plus deux requêtes/2 Mio dans les cinq secondes suivant `load` sans défilement à 320 × 800 px, puis au plus neuf invocations/9 Mio pour une consultation complète sans doublon, soit 9 000 invocations/9 000 Mio pour 1 000 consultations. La preview compare ce budget aux quotas Netlify officiels alors en vigueur avant toute validation.
 
 ## Déploiement prévu
 

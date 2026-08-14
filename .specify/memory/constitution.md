@@ -1,18 +1,18 @@
 <!--
 Sync Impact Report
-- Version change: modèle non versionné → 1.0.0
-- Modified principles:
-  - Principes génériques du modèle → I. Priorité au MVP et maîtrise du périmètre
-  - Principes génériques du modèle → II. Décisions guidées par la documentation
-  - Principes génériques du modèle → III. Fidélité au design et accessibilité
-  - Principes génériques du modèle → IV. Architecture Next.js côté serveur
-  - Principes génériques du modèle → V. Sécurité Supabase en profondeur
-  - Principe ajouté → VI. Intégrité des données et changements reproductibles
-  - Principe ajouté → VII. Vérification avant livraison
-- Added sections:
-  - Contraintes produit et techniques
-  - Workflow de développement et critères de qualité
-- Removed sections: aucune ; les sections génériques du modèle ont été spécialisées
+- Version change: 1.0.0 → 1.1.0
+- Modified principle:
+  - VI. Intégrité des données et changements reproductibles : distingue les migrations
+    SQL des configurations Storage appartenant au fournisseur et impose, pour celles-ci,
+    un script API/CLI versionné, idempotent, contrôlé et vérifiable.
+- Added sections: aucune
+- Removed sections: aucune
+- Templates reviewed:
+  - `.specify/templates/plan-template.md` : compatible, aucune modification requise
+  - `.specify/templates/spec-template.md` : compatible, aucune modification requise
+  - `.specify/templates/tasks-template.md` : compatible, aucune modification requise
+- Runtime guidance reviewed:
+  - `AGENTS.md` : déjà aligné sur les migrations SQL et l'API Storage officielle
 - Follow-up TODOs: aucun
 -->
 
@@ -76,11 +76,17 @@ photo DOIT traiter à la fois l'objet stocké et son enregistrement.
 Toute entrée externe DOIT être validée côté serveur avec Zod et protégée par des
 contraintes de base de données lorsque la règle peut y être exprimée. Les types métier
 DOIVENT rester stricts ; `any` est interdit sans justification écrite et localisée.
-Les changements de schéma, de politiques RLS, de privilèges et de Storage DOIVENT être
-livrés sous forme de migrations versionnées et reproductibles. Une modification
-manuelle non tracée d'un environnement distant est interdite. Les erreurs partielles,
-notamment lors d'un téléversement ou d'une suppression, DOIVENT produire un état
-compréhensible et récupérable.
+Les changements de schéma applicatif, de politiques RLS — y compris les politiques
+sur les tables Storage — et de privilèges SQL DOIVENT être livrés sous forme de
+migrations versionnées et reproductibles. Lorsqu'une configuration ou un objet
+Storage appartient au fournisseur et que sa documentation exige de traiter son schéma
+comme étant en lecture seule, le changement DOIT passer par l'API ou la CLI officielle
+au moyen d'un script versionné, idempotent et fail-closed. Ce script DOIT vérifier sa
+cible exacte, exiger une autorisation explicite avant toute cible distante, protéger
+ses identifiants privilégiés, ne jamais les journaliser et vérifier la postcondition
+attendue. Une modification manuelle non tracée d'un environnement distant est
+interdite. Les erreurs partielles, notamment lors d'un téléversement ou d'une
+suppression, DOIVENT produire un état compréhensible et récupérable.
 
 ### VII. Vérification avant livraison
 
@@ -125,7 +131,8 @@ cause ; elle ne peut pas être présentée comme entièrement validée.
 
 Une revue DOIT refuser tout changement qui élargit silencieusement le MVP, altère le
 design documenté, contourne l'autorisation côté serveur, expose un secret, modifie la
-base sans migration ou ne fournit pas de preuve de validation proportionnée au risque.
+base ou Storage sans le mécanisme versionné exigé par le principe VI, ou ne fournit
+pas de preuve de validation proportionnée au risque.
 
 ## Gouvernance
 
@@ -150,4 +157,4 @@ approuvée par l'utilisateur et accompagnée d'une condition de suppression. La 
 dernière modification DOIT évoluer à chaque amendement, même lorsque le numéro de
 version ne change que pour une clarification.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-08
+**Version**: 1.1.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12

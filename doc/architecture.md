@@ -78,6 +78,16 @@ Il n'est pas prévu d'ouvrir l'inscription au public. L'auto-inscription doit ê
 | `size_bytes` | `integer` | Taille du fichier |
 | `ordre_affichage` | `integer` | Position dans la galerie |
 | `actif` | `boolean` | Affichage sur le site public |
+| `file_state` | `text` | Cohérence du couple ligne-fichier : `ready`, `pending` ou `repair_required` |
+| `operation_kind` | `text` | Opération `create`, `replace` ou `delete` en cours ou à reprendre |
+| `operation_id` | `uuid` | Identifiant idempotent de l'opération |
+| `pending_storage_path` | `text` | Nouveau chemin réservé à confirmer |
+| `pending_width` | `integer` | Largeur attendue du nouveau fichier |
+| `pending_height` | `integer` | Hauteur attendue du nouveau fichier |
+| `pending_size_bytes` | `integer` | Poids attendu du nouveau fichier |
+| `cleanup_storage_path` | `text` | Ancien chemin ou résidu restant à retirer |
+| `operation_started_at` | `timestamptz` | Début serveur de l'opération |
+| `repair_code` | `text` | Cause fermée parmi `upload_unconfirmed`, `metadata_unconfirmed`, `invalid_object_bytes`, `new_file_cleanup`, `old_file_cleanup`, `object_delete_unconfirmed`, `row_delete_unconfirmed`, `object_missing`, `stale_pending_no_object` et `stale_pending_object_present` |
 | `created_at` | `timestamptz` | Date d'ajout |
 | `updated_at` | `timestamptz` | Date de dernière modification |
 
@@ -85,13 +95,23 @@ Une table de catégories séparée pourra être ajoutée plus tard si les catég
 
 ## Stockage des fichiers
 
-Un bucket Supabase Storage dédié `galerie` contiendra les images publiques. La fondation impose le format canonique `photos/<uuid-v4>.<extension-autorisée>` ; la future gestion de galerie générera effectivement ce chemin sans réutiliser le nom fourni par l'utilisateur.
+Un bucket Supabase Storage dédié et privé `galerie` contiendra les images de la galerie. La fondation impose le format canonique `photos/<uuid-v4>.<extension-autorisée>` ; la gestion de galerie génère effectivement ce chemin sans réutiliser le nom fourni par l'utilisateur.
 
-Le bucket accepte JPEG, PNG et WebP jusqu'à 8 MiB. Sa visibilité publique autorise le téléchargement d'un lien connu, pas la liste des objets ni une écriture publique.
+Les pages ne reçoivent jamais une URL Storage. Elles utilisent une URL même origine par ID ; une Route Handler relit à chaque requête la ligne active et `ready`, récupère son chemin serveur puis télécharge l'objet privé sous RLS. Un masquage, un état non `ready` ou une suppression rend donc immédiatement la même URL applicative indisponible.
 
-La base de données ne contiendra pas les fichiers eux-mêmes. Elle conservera uniquement leur chemin et leurs métadonnées. La fondation prépare séparément les permissions de suppression ; lorsqu'une photo sera supprimée depuis l'administration, le futur workflow applicatif devra retirer l'enregistrement et le fichier correspondant avec une stratégie de reprise en cas d'échec partiel.
+Le bucket accepte les MIME JPEG, PNG et WebP jusqu'à 8 MiB, mais la chaîne applicative refuse APNG et WebP animé avant décodage complet. Une politique SELECT anonyme autorise uniquement les opérations de téléchargement d'un chemin lié à une ligne active/`ready`, jamais la liste ; toutes les écritures restent administratives.
 
-Les envois devront se faire directement vers Supabase Storage avec une session administrateur valide, afin d'éviter de faire transiter les fichiers lourds par les fonctions Netlify.
+Les politiques Storage restent versionnées dans la migration SQL. La configuration du bucket appartenant au fournisseur — privé, limite 8 MiB et MIME — passe par `supabase/config.toml` en local et par `scripts/configure-gallery-bucket.mjs` via l'API officielle sur une cible hébergée. Ce script idempotent exige une URL/référence concordante et une clé dédiée `sb_secret_...` injectée ponctuellement, vérifie la postcondition puis impose sa révocation ; la clé JWT historique `service_role` et tout chargement par Next.js ou Netlify sont exclus.
+
+La base de données ne contient pas les fichiers eux-mêmes. Elle conserve uniquement leur chemin et leurs métadonnées. Le workflow applicatif masque d'abord la photo, retire l'objet exact par l'API Storage, puis retire la ligne ; un état durable `repair_required` permet de reprendre idempotemment tout échec partiel.
+
+Les envois devront se faire directement vers Supabase Storage avec une session administrateur valide, afin d'éviter de faire transiter les fichiers lourds par les fonctions Netlify. Chaque nouvel ajout ou remplacement utilise un chemin inédit `photos/<uuid-v4>.webp` sans écraser l'ancien objet. Les JPEG et PNG déjà repris restent lisibles.
+
+Les mutations qui traversent PostgreSQL et Storage suivent une reprise compensatoire : une ligne est d'abord masquée dans l'état `pending`, les chemins exacts et l'identifiant d'opération sont conservés, puis l'opération passe à `ready` uniquement lorsque la paire ligne-fichier est cohérente. La finalisation relit d'abord les métadonnées, puis télécharge avec la session administrateur le WebP final borné à 1 Mio et valide ses octets avant publication. Un échec partiel devient `repair_required`, reste invisible au public et peut être repris de manière idempotente. La suppression efface l'objet par l'API Storage avant de retirer définitivement la ligne ; aucun SQL direct ne supprime une ligne de `storage.objects`.
+
+À l'entrée dans la liste administrative, une action réautorisée réconcilie uniquement les opérations `pending` âgées d'au moins 10 minutes vers `stale_pending_object_present` ou `stale_pending_no_object` selon l'inspection du chemin exact, sans suppression automatique. Une miniature admin en échec peut déclencher l'audit du chemin relu côté serveur ; seule une absence confirmée produit `object_missing`. Côté public, la Route Handler retourne un 404 expurgé pour un état non public ou un objet absent et le composant masque la carte cassée dans la vue courante jusqu'à cet audit.
+
+Le bootstrap initial convertit les neuf images existantes avec `sharp@0.35.3`, épinglé exactement dans `package.json` et `package-lock.json` et importé uniquement par `scripts/bootstrap-gallery.mjs`. Un manifeste SHA-256 lie sources, WebP et métadonnées ; l'import passe ensuite par les mêmes réservations, politiques, validations serveur et finalisations que l'administration, sans clé `service_role`. La page publique conserve ses tableaux statiques comme source active jusqu'à deux bootstraps identiques et au contrôle des neuf paires ; la bascule dynamique et leur retrait forment ensuite une seule étape.
 
 ## Authentification et autorisations
 
@@ -99,6 +119,7 @@ Les envois devront se faire directement vers Supabase Storage avec une session a
 - création, modification et suppression réservées à l'administrateur authentifié ;
 - Row Level Security activée sur toutes les tables exposées ;
 - politiques Storage limitant les écritures au compte administrateur ;
+- bucket galerie privé et téléchargement public limité par RLS à l'opération, au chemin et à une ligne active/`ready` ;
 - utilisation de cookies sécurisés pour la session côté serveur ;
 - aucune clé `service_role` exposée au navigateur.
 
@@ -149,7 +170,9 @@ Les routes Prestations et Galerie administratives ne seront ajoutées à cette s
 1. Next.js récupère les prestations ou les photos actives.
 2. Supabase applique les règles de lecture publique.
 3. Next.js produit la page.
-4. Les fichiers image sont servis directement par Supabase Storage.
+4. Le navigateur demande `/api/gallery-images/<id>` ; la Route Handler relit l'état courant et télécharge l'objet privé sous RLS.
+5. La réponse transmet l'image sans réencodage avec `Cache-Control: private, no-store`, sans révéler le chemin Storage.
+6. Côté navigateur, les deux premières images sont montées après hydratation ; les suivantes attendent le premier défilement puis un `IntersectionObserver` à marge de 800 px, afin d'éviter les doubles requêtes et de borner le coût initial.
 
 ### Modification d'une prestation
 
@@ -164,10 +187,11 @@ Les lectures de prix demandent explicitement `prix::text` à PostgREST avant la 
 ### Ajout d'une photo
 
 1. L'administrateur sélectionne une image.
-2. Le navigateur vérifie le format et la taille.
-3. L'image est envoyée vers Supabase Storage.
-4. Son chemin et son texte alternatif sont enregistrés dans `photos_galerie`.
-5. La galerie publique est actualisée ou revalidée.
+2. Le navigateur inspecte le conteneur, les dimensions, le caractère fixe et le type réel avant décodage, applique l'orientation, convertit les pixels en sRGB, redimensionne puis encode un WebP sans métadonnée à 0,85, 0,80 ou 0,75. Deux fixtures RGBA de 25 points vérifient le chemin sans redimensionnement (0/255 exact, intermédiaires ±1) et le chemin 2 000 × 1 000 vers 1 600 × 800 (gradient analytique, intermédiaires ±3), sans exiger la conservation du RGB caché sous alpha nul.
+3. Une Server Action réautorisée réserve une ligne masquée, un identifiant d'opération et un chemin UUID unique.
+4. Le navigateur envoie directement le WebP préparé vers ce chemin Supabase Storage avec la session administrateur.
+5. Une Server Action réautorisée vérifie les métadonnées, télécharge le WebP final de 1 Mio maximum et valide ses octets RIFF, dimensions, animation et chunks avant de finaliser `photos_galerie`, ou conserve un état `repair_required` récupérable.
+6. Le tag public `galerie` est invalidé dès qu'un changement confirmé ou un masquage de sécurité affecte la projection publique.
 
 ## Hors périmètre initial
 

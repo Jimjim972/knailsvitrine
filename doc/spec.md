@@ -116,24 +116,30 @@ Les trois catégories et leur présentation visuelle restent configurées dans l
 
 | ID | Besoin |
 | --- | --- |
-| `GAL-PUB-01` | Afficher uniquement les photos actives. |
+| `GAL-PUB-01` | Afficher uniquement les photos à la fois actives et dans l'état de fichier cohérent `ready`. |
 | `GAL-PUB-02` | Respecter l'ordre défini dans l'administration. |
 | `GAL-PUB-03` | Conserver les variantes visuelles de la galerie actuelle : mise en avant, petite carte et carte large. |
 | `GAL-PUB-04` | Chaque photo doit avoir un texte alternatif. |
 | `GAL-PUB-05` | Un titre, un libellé et un lien externe peuvent être associés à une photo de manière facultative. |
 | `GAL-PUB-06` | Le chargement différé doit être utilisé pour les photos qui ne sont pas immédiatement visibles. |
+| `GAL-PUB-07` | Masquer toute section sans photo active et `ready` ; si la galerie principale et le journal social sont tous deux vides, conserver l'en-tête et afficher un message neutre unique sans image statique de secours. |
+| `GAL-PUB-08` | La livraison privée même origine doit rester bornée à deux demandes/2 Mio avant le premier défilement et à neuf invocations/9 Mio pour une consultation complète des neuf fixtures maximales, sans doublon d'ID. |
 
 ### 7.4 Administration de la galerie
 
 | ID | Besoin |
 | --- | --- |
 | `GAL-ADM-01` | Envoyer une photo depuis l'appareil de l'administrateur. |
-| `GAL-ADM-02` | Vérifier le type, les dimensions et la taille du fichier avant l'envoi. |
+| `GAL-ADM-02` | Vérifier côté navigateur le conteneur, les dimensions et la taille avant l'envoi, puis vérifier côté serveur les octets du WebP final avant toute publication. |
 | `GAL-ADM-03` | Enregistrer le texte alternatif, le titre facultatif, le type d'affichage, l'ordre et le statut. |
 | `GAL-ADM-04` | Prévisualiser l'image et sa visibilité. |
 | `GAL-ADM-05` | Remplacer une photo sans laisser un ancien fichier inutilisé. |
 | `GAL-ADM-06` | Supprimer la ligne de base de données et le fichier Storage associé après confirmation. |
 | `GAL-ADM-07` | Si l'enregistrement des métadonnées échoue après l'envoi, supprimer le fichier envoyé ou signaler clairement le nettoyage nécessaire. |
+| `GAL-ADM-08` | Une incohérence partielle entre une photo et son fichier doit masquer la photo du public et conserver dans l'administration un état persistant « À réparer » avec une action de reprise jusqu'à résolution. |
+| `GAL-ADM-09` | À l'ouverture de la liste, toute opération encore en cours depuis au moins 10 minutes doit devenir « À réparer » après contrôle serveur, sans suppression automatique. |
+| `GAL-ADM-10` | Une miniature absente doit déclencher un contrôle serveur ciblé ; seule une absence confirmée masque durablement la photo et la place « À réparer ». |
+| `GAL-ADM-11` | La liste doit présenter toutes les combinaisons d'intention active ou masquée et d'état de fichier `ready`, `pending` ou `repair_required`, en distinguant textuellement ces deux notions. |
 
 ### 7.5 Authentification
 
@@ -182,17 +188,33 @@ Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remp
 
 ### 8.2 Photos
 
-- formats entrants acceptés : JPEG, PNG et WebP ;
-- SVG, GIF animés, vidéos et fichiers arbitraires sont refusés dans la première version ;
+- formats entrants acceptés : images fixes JPEG, PNG et WebP ;
+- SVG, GIF, APNG, WebP animés, vidéos, exécutables et fichiers arbitraires sont refusés dans la première version ;
 - taille maximale du fichier entrant : 8 Mo ;
-- largeur cible après traitement : 1 600 px maximum ;
-- format cible recommandé : WebP ;
-- poids cible : 150 à 400 Ko, avec un maximum applicatif à définir autour de 1 Mo après traitement ;
+- dimensions maximales avant décodage complet : 25 000 000 pixels au total et 8 192 px par côté ;
+- côté le plus long cible après traitement : 1 600 px maximum ;
+- format final obligatoire pour tout nouvel ajout ou remplacement : WebP ;
+- le canal alpha visible d'une image source est conservé dans l'aperçu et le fichier WebP final ; une fixture RGBA non redimensionnée de 25 positions impose alpha 0/255 exact et un écart absolu maximal de 1 pour les valeurs intermédiaires, tandis qu'une fixture 2 000 × 1 000 redimensionnée en 1 600 × 800 impose sur 25 positions un gradient `arrondi(255 × u)`, avec extrémités exactes et écart intermédiaire maximal de 3, sans garantir les composantes RGB cachées derrière un alpha nul ;
+- les fichiers JPEG et PNG déjà publiés restent lisibles sans conversion obligatoire ;
+- à chaque dimension évaluée, l'encodage WebP essaie successivement les qualités 0,85, 0,80 et 0,75, sans descendre plus bas ; si aucun essai ne respecte 1 Mio, les dimensions sont réduites puis la séquence recommence à 0,85 ;
+- avant la suppression des profils intégrés, les pixels sont convertis vers l'espace sRGB utilisé par la publication Web ;
+- poids cible : 150 à 400 Ko, avec un maximum applicatif de 1 Mio (1 048 576 octets) après traitement ;
+- pour atteindre 1 Mio, le côté le plus long ne descend pas sous 1 200 px, sauf si l'original est plus petit et n'est pas agrandi ; si la limite reste impossible à ce plancher, le fichier est refusé ;
 - le texte alternatif est obligatoire et limité à 200 caractères ;
+- le titre est facultatif et limité à 120 caractères ;
+- le libellé est facultatif et limité à 40 caractères ;
 - le nom de fichier final est généré par l'application et ne reprend pas directement un nom fourni par l'utilisateur ;
 - le chemin Storage est unique ;
 - les dimensions finales sont conservées en base afin d'éviter les décalages de mise en page ;
+- l'orientation de l'original est appliquée aux pixels, puis toutes les métadonnées intégrées, notamment la position, la date et l'appareil, sont supprimées du fichier publié ;
+- avant tout passage à l'état public, le serveur relit l'objet réservé de 1 Mio maximum et valide ses octets RIFF/WebP, son caractère statique, ses dimensions et l'absence de chunks ICCP, EXIF, XMP ou inconnus ; le MIME et les dimensions déclarés par le navigateur ne suffisent pas ;
+- un objet final invalide est supprimé par l'API Storage ou conservé dans un état « À réparer » non public si son absence ne peut pas être confirmée ;
+- une opération `pending` depuis au moins 10 minutes est considérée abandonnée et passe après contrôle serveur à un état « À réparer » persistant ;
+- une erreur de chargement publique masque seulement la carte courante ; une absence durable n'est enregistrée qu'après un audit administrateur réautorisé du chemin exact ;
+- les neuf images initiales sont converties hors runtime avec `sharp@0.35.3`, épinglé exactement dans le manifeste et le lockfile comme dépendance de développement et importé uniquement par le script de bootstrap ; elles sont contrôlées par un manifeste SHA-256 puis importées via le même flux administrateur, sans clé `service_role` ;
+- les tableaux métier statiques restent la source publique active jusqu'à deux exécutions identiques du bootstrap et à la vérification des neuf paires ligne-objet ; la bascule vers la source administrable et le retrait de ces tableaux ont lieu seulement après ce gate ;
 - une image inactive reste stockée mais n'est pas affichée publiquement ;
+- le bucket galerie reste privé ; chaque demande d'octets relit l'état actuel de la photo et cesse de répondre dès son masquage, son passage hors `ready` ou sa suppression, même avec une adresse déjà observée ;
 - une image supprimée doit être retirée de Storage.
 
 ### 8.3 Ordre d'affichage
@@ -266,20 +288,22 @@ Le bon fonctionnement de ce mécanisme devra être testé sur Netlify, car la pe
 
 ### 9.5 Images
 
-Le bucket Supabase `galerie` est public en lecture, mais protégé en écriture par des politiques Storage.
+Le bucket Supabase `galerie` est privé. Les politiques Storage autorisent uniquement le téléchargement d'un chemin encore référencé par une photo active et `ready`, sans autoriser la liste anonyme ; toutes les écritures restent administratives.
 
 Le flux recommandé est :
 
 1. l'administrateur choisit un fichier ;
-2. le navigateur valide son type et sa taille ;
-3. le navigateur redimensionne et convertit l'image en WebP ;
-4. le fichier est envoyé directement à Supabase Storage avec la session authentifiée ;
-5. les métadonnées sont enregistrées dans PostgreSQL ;
-6. le cache de la galerie est invalidé.
+2. le navigateur inspecte les octets et dimensions, puis redimensionne, oriente, convertit en sRGB et encode un WebP sans métadonnée ;
+3. une Server Action réautorise l'administrateur et réserve une ligne masquée, un identifiant d'opération et un chemin UUID ;
+4. le WebP final est envoyé directement à Supabase Storage avec la session authentifiée ;
+5. une Server Action relit les métadonnées Storage, refuse avant téléchargement tout objet supérieur à 1 Mio, puis télécharge et valide les octets du chemin réservé exact ;
+6. la ligne passe à `ready` seulement après validation ; sinon l'objet est nettoyé ou la ligne conserve un état `repair_required` reprenable ;
+7. lors d'un remplacement ou d'une suppression, l'ancien chemin exact est nettoyé par l'API Storage avant confirmation complète ;
+8. le cache des métadonnées de galerie est invalidé lorsque la projection publique change ou doit être masquée par sécurité ; les octets sont servis par une route même origine non cachée qui relit la ligne et son chemin à chaque requête.
 
-L'envoi direct évite de transférer les fichiers lourds à travers une fonction Netlify.
+L'original de 8 Mo maximum ne traverse jamais une fonction Netlify. Le WebP final borné à 1 Mio est relu une fois par la finalisation serveur puis transite par la route d'image lors de chaque lecture publique autorisée ; ce coût est accepté pour garantir la révocation immédiate sans clé privilégiée.
 
-Pour limiter les crédits Netlify, les images déjà compressées peuvent être rendues avec `next/image` sans transformation serveur supplémentaire. Les propriétés `width`, `height`, `sizes` et `alt` restent obligatoires. Le domaine Storage Supabase doit être autorisé précisément dans `images.remotePatterns` si l'optimisation Next.js est utilisée.
+Les images déjà compressées sont rendues avec `next/image` sans transformation serveur supplémentaire via une URL même origine par identifiant. Les propriétés `width`, `height`, `sizes` et `alt` restent obligatoires. La réponse d'octets porte `Cache-Control: private, no-store` et ne redirige jamais vers le chemin Storage ; aucun `remotePatterns` Supabase n'est requis pour la galerie.
 
 ### 9.6 Formulaires
 
@@ -329,14 +353,24 @@ Index recommandés :
 | `variante_affichage` | `text` | Valeur contrôlée : `featured`, `small`, `wide_small`, `wide_large` ou `social` |
 | `width` | `integer` | Obligatoire, valeur positive |
 | `height` | `integer` | Obligatoire, valeur positive |
-| `mime_type` | `text` | Obligatoire, normalement `image/webp` |
+| `mime_type` | `text` | Obligatoire ; `image/webp` pour tout nouvel ajout ou remplacement, avec prise en charge des anciens JPEG et PNG |
 | `size_bytes` | `integer` | Obligatoire, valeur positive |
 | `ordre_affichage` | `integer` | Obligatoire, zéro par défaut |
 | `actif` | `boolean` | Obligatoire, vrai par défaut |
+| `file_state` | `text` | Obligatoire, `ready`, `pending` ou `repair_required` ; seul `ready` peut être public |
+| `operation_kind` | `text` | Facultatif, `create`, `replace` ou `delete` pendant une opération de fichier |
+| `operation_id` | `uuid` | Facultatif, identifiant idempotent de l'opération en cours ou à réparer |
+| `pending_storage_path` | `text` | Facultatif, nouveau chemin réservé à transférer ou confirmer |
+| `pending_width` | `integer` | Facultatif, largeur finale attendue du nouveau fichier réservé |
+| `pending_height` | `integer` | Facultatif, hauteur finale attendue du nouveau fichier réservé |
+| `pending_size_bytes` | `integer` | Facultatif, poids final attendu du nouveau fichier réservé |
+| `cleanup_storage_path` | `text` | Facultatif, chemin exact restant à retirer |
+| `operation_started_at` | `timestamptz` | Facultatif, date serveur du début de l'opération |
+| `repair_code` | `text` | Facultatif, valeur fermée parmi `upload_unconfirmed`, `metadata_unconfirmed`, `invalid_object_bytes`, `new_file_cleanup`, `old_file_cleanup`, `object_delete_unconfirmed`, `row_delete_unconfirmed`, `object_missing`, `stale_pending_no_object` et `stale_pending_object_present` |
 | `created_at` | `timestamptz` | Obligatoire, date serveur par défaut |
 | `updated_at` | `timestamptz` | Obligatoire, date serveur par défaut |
 
-Index partiel `photos_galerie_public_variant_order_idx` sur `(variante_affichage, ordre_affichage, created_at, id)` lorsque `actif = true`.
+Index partiel `photos_galerie_public_variant_order_idx` sur `(variante_affichage, ordre_affichage, created_at, id)` lorsque `actif = true and file_state = 'ready'`.
 
 ## 11. Sécurité
 
@@ -357,7 +391,9 @@ Index partiel `photos_galerie_public_variant_order_idx` sur `(variante_affichage
 | Prestations actives | Lecture | Lecture | Lecture |
 | Prestations inactives | Aucun accès | Aucun accès | Lecture |
 | Création/modification/suppression de prestations | Refusé | Refusé | Autorisé |
-| Photos actives et fichiers publics | Lecture | Lecture | Lecture |
+| Métadonnées des photos actives et cohérentes (`actif=true AND file_state='ready'`) | Lecture | Lecture | Lecture |
+| Octets des photos actives et cohérentes | Lecture réautorisée | Lecture réautorisée | Lecture |
+| Octets des photos inactives, non `ready` ou supprimées, même via une URL applicative connue | Refusé | Refusé | Selon état administratif courant |
 | Métadonnées des photos inactives | Aucun accès | Aucun accès | Lecture |
 | Envoi/remplacement/suppression de fichiers | Refusé | Refusé | Autorisé |
 
@@ -366,6 +402,8 @@ Le rôle administrateur provient de `app_metadata`, contrôlé par le serveur, e
 Le même prédicat exige que le claim `session_id` référence encore une session appartenant à `auth.uid()` et non expirée. Un ancien JWT admin perd ainsi les droits privilégiés dès que son rôle, sa session ou son expiration ne satisfait plus l'autorité courante.
 
 Les politiques d'actualisation Storage doivent tenir compte du fait qu'un remplacement de fichier nécessite les droits `INSERT`, `SELECT` et `UPDATE`. La suppression nécessite également sa politique dédiée.
+
+Le masquage d'une ligne, son passage `pending|repair_required` ou sa suppression révoque les octets dès la première nouvelle demande à la même URL applicative. Le bucket privé, la relecture sous RLS et les réponses `private, no-store` empêchent qu'une URL Storage ou un cache partagé contourne ce changement.
 
 ### 11.3 Gestion des secrets
 
@@ -385,6 +423,8 @@ Une éventuelle clé secrète ou `service_role` :
 - ne doit pas être utilisée pour les opérations CRUD normales si RLS suffit ;
 - doit rester dans les secrets de l'hébergeur si un usage serveur exceptionnel est justifié.
 
+La configuration ponctuelle du bucket galerie constitue un cas distinct du runtime : le seul processus du script API versionné reçoit `SUPABASE_GALLERY_CONFIG_URL`, `SUPABASE_GALLERY_CONFIG_PROJECT_REF` et une clé Supabase dédiée `sb_secret_...` dans `SUPABASE_GALLERY_CONFIG_SECRET_KEY`, jamais la clé JWT historique `service_role`. Le script exige la concordance URL/référence, masque la clé, vérifie la postcondition, puis la clé est révoquée et son ancien jeton doit échouer. Ces variables ne sont jamais ajoutées à Next.js, Netlify, `.env.local`, au bootstrap CRUD ou au navigateur.
+
 ## 12. Exigences non fonctionnelles
 
 ### 12.1 Performance
@@ -393,9 +433,11 @@ Une éventuelle clé secrète ou `service_role` :
 - les images doivent avoir des dimensions explicites pour éviter les décalages visuels ;
 - seules les premières images visibles peuvent être chargées en priorité ;
 - les autres images utilisent le chargement différé ;
+- le test lazy utilise un contexte navigateur isolé neuf, sans cache mémoire/disque, Service Worker ni bridage réseau artificiel, avec observateur réseau installé avant navigation, origine locale même domaine et viewport 320 × 800 px : pendant les deux secondes chronométrées depuis `load` sans défilement, l'URL identifiable d'une image différée dont le bord supérieur se trouve à au moins 2 400 px sous le bord inférieur initial ne doit pas être demandée ; après un défilement terminé qui place ce bord supérieur à 800 px ou moins sous le viewport, sa requête doit commencer dans les deux secondes ;
+- avec neuf fixtures WebP de exactement 1 Mio et le même contexte froid 320 × 800 px, les cinq secondes suivant `load` sans défilement déclenchent au plus deux demandes et 2 Mio de corps d'image ; une consultation complète déclenche au plus neuf invocations et 9 Mio sans doublon d'ID, soit une extrapolation maximale de 9 000 invocations et 9 000 Mio pour 1 000 consultations, à comparer aux quotas Netlify officiels en vigueur ;
 - les requêtes indépendantes sont lancées en parallèle lorsque cela est pertinent ;
 - les listes publiques utilisent un cache invalidé lors des modifications ;
-- aucune pagination n'est requise pour 40 prestations, mais la galerie devra en prévoir une si elle dépasse environ 100 éléments dans l'administration.
+- aucune pagination n'est requise pour 40 prestations ; la galerie administrative affiche au plus 100 éléments par page et montre précédent, suivant, page courante et total à partir du 101e élément.
 
 ### 12.2 Accessibilité
 
@@ -464,7 +506,33 @@ Supabase Free ne fournit pas les sauvegardes automatiques du niveau payant. La p
 - tests des fonctions de transformation des données ;
 - test de création, modification, masquage et suppression d'une prestation ;
 - test d'envoi et suppression d'une image ;
+- corpus exact F01–F20 de la spécification galerie, couvrant les six valides, trois bornes vides/supérieures, six formats interdits et cinq contradictions extension/type/octets ;
+- deux oracles RGBA de 25 positions validés sur l'aperçu exact et le WebP finalisé, avec et sans redimensionnement ;
+- matrice serveur de huit objets déclarés WebP dont seul l'objet réellement conforme devient public ;
+- domaine SQL des dix `repair_code` accepté valeur par valeur et toute autre valeur refusée ;
+- pagination stable de 201 photos en pages de 100, 100 et 1 sans perte ni doublon ;
+- réconciliation d'opérations à 9 min 59 s, 10 min et 11 min, et audit d'un fichier absent ;
 - test de refus d'une opération non autorisée.
+- test du bucket privé, du refus de liste anonyme et de la même URL applicative passant de 200 à 404 immédiatement après masquage, état non `ready` ou suppression.
+
+La matrice d'interruption galerie couvre exactement les cas suivants :
+
+| ID | Interruption | Résultat attendu après rechargement et reprise |
+| --- | --- | --- |
+| C1 | Réservation de création avant upload | `pending/create` sans objet, puis audit et annulation ciblée. |
+| C2 | Upload de création avant validation/finalisation | Objet réservé revalidé, puis finalisé ou nettoyé. |
+| C3 | Octets invalides avant nettoyage confirmé | Jamais public ; suppression/annulation ou `repair_required/invalid_object_bytes`. |
+| C4 | Ligne créée `ready` avant réponse client | Même opération confirmée idempotemment, sans doublon. |
+| R1 | Remplacement masqué/réservé avant upload | Ancien objet conservé, nouveau absent, ligne non publique. |
+| R2 | Nouvel objet uploadé avant validation | Ancien courant ; nouveau validé ou nettoyé. |
+| R3 | Nouvel objet validé avant bascule | Ancien courant ; bascule répétable sans duplication. |
+| R4 | Bascule avant retrait de l'ancien | Nouveau courant ; ancien chemin nettoyé exactement. |
+| R5 | Ancien retiré avant retour à `ready` | Nouveau seul ; état de nettoyage effacé idempotemment. |
+| D1 | `pending/delete` avant retrait objet | Ligne et objet non publics, puis retrait ciblé. |
+| D2 | Objet retiré avant retrait ligne | Absence acceptée, puis ligne retirée. |
+| D3 | Ligne retirée avant réponse client | Ligne et objet absents ; répétition convergente. |
+
+Chaque cas interdit faux succès, doublon et action sur un chemin tiers. Les dix états non convergés restent masqués du public ; C4 et D3 prouvent la répétition idempotente après convergence.
 
 ### 15.2 Vérifications de sécurité Supabase
 
@@ -480,7 +548,7 @@ Les scénarios suivants doivent être exécutés avec les rôles réels :
 8. aucune clé secrète n'apparaît dans le bundle du navigateur.
 9. une auto-inscription appelée directement avec la clé publiable est refusée sans créer de compte.
 
-La fondation Supabase peut vérifier séparément les droits de suppression de la ligne et du fichier. Le scénario 7 reste le critère du futur workflow applicatif de galerie, qui devra coordonner les deux ressources et traiter les échecs partiels.
+La fondation Supabase vérifie séparément les droits de suppression de la ligne et du fichier. Le workflow applicatif de galerie coordonne désormais les deux ressources par une opération durable, un masquage préalable et une reprise idempotente des échecs partiels ; le scénario 7 en reste le critère de validation.
 
 ### 15.3 Vérifications fonctionnelles
 
@@ -490,10 +558,15 @@ La fondation Supabase peut vérifier séparément les droits de suppression de l
 - badge facultatif correctement affiché ;
 - galerie conforme au design existant ;
 - textes alternatifs présents ;
-- modifications visibles sans redéploiement ;
+- chaque modification confirmée est visible dès le premier rendu administratif suivant la réponse de l'action, sans actualisation manuelle, puis sur une nouvelle consultation publique en moins de cinq secondes et sans redéploiement ;
 - connexion, expiration de session et déconnexion opérationnelles ;
 - formulaire de contact réellement reçu avant d'afficher le succès ;
 - navigation mobile et clavier validée.
+- somme des entrées `layout-shift` attribuables aux images de galerie égale à 0 sur le parcours automatisé ;
+- conversion colorimétrique mesurée sur un corpus opaque versionné de trois images sRGB et trois Display-P3, avec 25 coordonnées normalisées `(u,v)` dans `[0,1]²` et triplets sRGB 8 bits par image ; chaque pixel est choisi par `x=floor(u×(largeur−1)+0,5)`, `y=floor(v×(hauteur−1)+0,5)` puis borné, et références/sorties sont converties de sRGB vers CIE Lab D65, observateur 2°, sans adaptation D50, avant CIEDE2000 ; sur les 150 échantillons de l'aperçu exact comme du WebP finalisé, la médiane est <=2 et le P95 au rang le plus proche, rang 143 en base 1, est <=5 ;
+- les neuf WebP initiaux conservent l'image complète sans recadrage ni déformation, respectent les dimensions manifestées à un pixel d'arrondi près et obtiennent un SSIM >=0,97 face à leur source opaque orientée, convertie sRGB et redimensionnée aux dimensions exactes de sortie ; le calcul porte sur `Y=0,299R+0,587G+0,114B` en sRGB 8 bits non linéaire, avec fenêtre gaussienne 11×11 sigma 1,5, `K1=0,01`, `K2=0,03`, `L=255`, extension réfléchie et moyenne des fenêtres centrées sur tous les pixels ;
+- un utilisateur cible non technique ajoute et retrouve une photo publique en moins de 3 minutes sans aide, puis réussit au moins 4 des 5 tâches standardisées — retrouver une photo masquée, ajouter, corriger l'alt, remplacer et supprimer — dès la première tentative sans indice.
+- le contrôle froid et la preview respectent le budget galerie de deux demandes/2 Mio avant défilement et neuf invocations/9 Mio par consultation complète, sans doublon d'ID ; le rapport consigne l'extrapolation à 1 000 consultations et la comparaison aux quotas Netlify officiels du jour.
 
 ## 16. Critères d'acceptation du MVP
 
@@ -501,16 +574,19 @@ La fonctionnalité est considérée comme terminée lorsque :
 
 1. les prestations codées en dur ont été remplacées par les données Supabase ;
 2. les photos administrables sont stockées dans Supabase Storage ;
-3. le design public existant est conservé sans régression notable ;
+3. le design public existant est conservé, avec zéro décalage de mise en page attribuable aux images dans le scénario automatisé et les seuils colorimétriques définis en 15.3 ;
 4. l'administrateur peut gérer les prestations et les photos depuis `/admin` ;
 5. un visiteur ou un utilisateur non-admin ne peut effectuer aucune mutation ;
 6. RLS et les politiques Storage ont été testées ;
-7. les images sont validées, compressées et accompagnées de leurs métadonnées ;
+7. les images sont validées côté navigateur puis leurs octets finaux sont revalidés côté serveur, compressés à 1 Mio maximum et accompagnés de leurs métadonnées ;
 8. les modifications publiques sont visibles sans redéploiement ;
 9. le formulaire de contact n'affiche plus de faux succès ;
 10. le lint, la vérification TypeScript et le build de production réussissent ;
 11. le projet est déployé sur Netlify avec les variables d'environnement correctes ;
-12. le domaine et le HTTPS fonctionnent en production.
+12. le domaine et le HTTPS fonctionnent en production ;
+13. la pagination 100/100/1, le test utilisateur standardisé et le budget de livraison galerie ont des preuves consignées, et aucune clé de configuration ponctuelle du bucket n'est présente dans Netlify.
+
+Pour la gestion de galerie, une liste administrative seule ou une création sans remplacement, suppression, publication publique, reprise des échecs et bootstrap initial ne constitue pas le MVP fonctionnel. Ces parcours doivent être livrés et validés ensemble ; l'upload multiple, le recadrage manuel, l'historique et la publication vers un réseau social restent hors périmètre.
 
 ## 17. Ordre d'implémentation recommandé
 

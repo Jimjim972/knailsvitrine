@@ -407,9 +407,13 @@ Les liens sont soulignés d'un trait doré transparent et deviennent dorés au s
 
 ### 10.3 Règles pour les futurs uploads
 
-- formats entrants JPEG, PNG ou WebP ;
-- conversion recommandée en WebP ;
-- largeur maximale proche de 1 600 px ;
+- formats entrants fixes JPEG, PNG ou WebP ; APNG et WebP animé refusés ;
+- conversion obligatoire en WebP pour chaque nouvel ajout ou remplacement ;
+- conservation du canal alpha visible de la source, vérifiée sur la fixture RGBA versionnée de 25 positions avec alpha 0/255 exact et tolérance ±1 pour les valeurs intermédiaires, sans exigence sur les composantes RGB cachées sous alpha nul ;
+- conversion des pixels en sRGB avant retrait des profils et autres métadonnées intégrées ;
+- côté le plus long limité à 1 600 px, sans agrandissement ;
+- qualités successives 0,85, 0,80 et 0,75, puis réduction des dimensions sans descendre sous 1 200 px pour un original qui atteint cette dimension ;
+- poids final maximal de 1 Mio ;
 - poids cible de 150 à 400 Ko ;
 - dimensions enregistrées en base ;
 - texte alternatif obligatoire ;
@@ -476,6 +480,8 @@ Sur ordinateur, une présentation tabulaire peut afficher :
 
 Sur mobile, chaque ligne doit devenir une carte lisible. Les actions doivent conserver un libellé ou un nom accessible et ne pas reposer uniquement sur une icône.
 
+La liste galerie affiche au plus 100 photos par page. À partir de la 101e, elle montre des contrôles précédent/suivant, le numéro de page et le total sans modifier l'ordre des éléments. Chaque photo affiche séparément son intention « Active » ou « Masquée » et son état de fichier « Prête », « En cours » ou « À réparer » ; ni l'un ni l'autre ne dépend uniquement de la couleur. Une miniature absente affiche le statut textuel « Fichier indisponible » et un contrôle « Vérifier » ; après contrôle serveur, elle conduit vers l'état « À réparer » sans lancer automatiquement une mutation par fichier absent. Aucun chemin technique ni URL Storage n'est présenté. Les miniatures et images publiques utilisent des adresses applicatives par identifiant et gardent exactement les mêmes dimensions, cadrages et états visuels que le design documenté.
+
 ### 12.4 Formulaires d'administration
 
 - regrouper les champs par sujet ;
@@ -500,6 +506,8 @@ Chaque écran de gestion doit définir :
 - succès ;
 - erreur récupérable ;
 - session expirée ;
+- opération de fichier en cours ;
+- fichier indisponible et état « À réparer » avec une action sûre ;
 - confirmation de suppression.
 
 ## 13. Accessibilité
@@ -517,7 +525,7 @@ Chaque écran de gestion doit définir :
 
 ### 13.2 Règles obligatoires pour la suite
 
-- ajouter un style global `:focus-visible` clairement contrasté pour liens, boutons et contrôles ;
+- ajouter un style global `:focus-visible` clairement contrasté pour liens, boutons et contrôles, avec le même repli `:focus` dans l’administration afin que WebKit conserve un anneau doré lorsque sa détection de modalité clavier n’active pas `:focus-visible` ;
 - garantir une cible tactile d'au moins 44 × 44 px ;
 - vérifier un contraste d'au moins 4,5:1 pour le texte normal ;
 - associer les erreurs aux champs avec des identifiants et attributs appropriés ;
