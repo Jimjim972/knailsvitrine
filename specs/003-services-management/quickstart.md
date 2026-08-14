@@ -348,3 +348,19 @@ Les contrôles locaux automatisés ont été exécutés avec Node.js 22.13.0 et 
 Les contrôles manuels sur un appareil Safari mobile réel à 320/375 px, Firefox, une technologie d'assistance et le protocole utilisateur SC-010 avec une personne non technique ne peuvent pas être attestés par l'environnement automatisé. Ils restent un gate d'acceptation humaine à exécuter ; aucun résultat fictif n'est consigné.
 
 Le gate Netlify n'a pas été exécuté : aucune preview Netlify ni aucun projet Supabase hébergé de test n'ont été explicitement autorisés pour cette intervention. Aucune migration distante, mutation hébergée ou opération de déploiement n'a été effectuée. Les vérifications CDN, anciens onglets/actions et logs hébergés restent donc requises avant une mise en production.
+
+## 16. Validation hébergée au 14 août 2026
+
+Le parcours fonctionnel Prestations a ensuite été exécuté avec l'autorisation explicite de l'utilisateur sur la preview [`dev--friendly-cactus-227b77.netlify.app`](https://dev--friendly-cactus-227b77.netlify.app), reliée au projet Supabase de test `pfucayywhexemzdfwmcs`. La production n'a pas été déployée ni modifiée.
+
+- la liste administrateur charge les neuf prestations initiales avec catégorie, ordre, statut et actions ;
+- les entrées invalides sont refusées avec des messages associés aux champs et les valeurs sont conservées : nom trop court, prix négatif, durée inférieure à 5 minutes, badge supérieur à 40 caractères et ordre négatif ;
+- une prestation temporaire active a été créée avec prix fixe, durée, badge, catégorie et ordre, puis affichée dès la consultation publique suivante avec `12,34 €` ;
+- la même ligne a été modifiée sans changer d'identité : nouvelle catégorie, ordre, badge, durée et tarif « À partir de 23,45 € » visibles publiquement en moins de cinq secondes ;
+- le tarif fixe, le tarif « À partir de » et le libellé public « Sur devis » ont été observés sur le catalogue hébergé ;
+- Masquer retire la prestation de `/services`, Réactiver la republie, et chaque mutation affiche un statut administratif explicite ;
+- Supprimer ouvre d'abord le dialogue nominatif et irréversible, puis ne retire la ligne qu'après « Supprimer définitivement » ;
+- après suppression, la prestation temporaire est absente de l'administration et du public, et le compteur est revenu à neuf ; aucune autre prestation n'a été modifiée ;
+- l'affichage courant contrôlé à 650 px ne présente aucun débordement horizontal ; la matrice automatisée Chromium/WebKit couvre séparément 320, 768 et 1 024 px.
+
+La valeur `SERVICE_SUCCESS_FLASH_SECRET` du seul contexte Netlify `branch-deploy` avait auparavant été corrigée pour respecter la longueur minimale attendue ; les confirmations de création et de modification sont effectivement apparues pendant ce parcours. Aucun secret ni identifiant de session n'est consigné ici. Les contrôles humains sur Safari mobile réel, Firefox, technologie d'assistance et participant non technique restent les seules validations manuelles externes non attestées.
