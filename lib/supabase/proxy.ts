@@ -6,7 +6,14 @@ import { getPublicSupabaseEnv } from "./env";
 import { fetchWithSupabaseTimeout } from "./fetch-with-timeout";
 import {
   createServiceSuccessConsumedMarker,
+  GALLERY_SUCCESS_FLASH_CONSUMED_COOKIE,
+  GALLERY_SUCCESS_FLASH_COOKIE,
+  GALLERY_SUCCESS_FLASH_GUARD_COOKIE,
+  GALLERY_SUCCESS_FLASH_HEADER,
+  gallerySuccessCookieOptions,
   getServiceSuccessFlashSecret,
+  parseGallerySuccessFlash,
+  parseServiceSuccessFlash,
   SERVICE_SUCCESS_FLASH_CONSUMED_COOKIE,
   SERVICE_SUCCESS_FLASH_COOKIE,
   SERVICE_SUCCESS_FLASH_GUARD_COOKIE,
@@ -40,17 +47,27 @@ export async function refreshAdminRequest(
   const { url, publishableKey } = getPublicSupabaseEnv();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete(SERVICE_SUCCESS_FLASH_HEADER);
+  requestHeaders.delete(GALLERY_SUCCESS_FLASH_HEADER);
   const secret = getServiceSuccessFlashSecret();
-  const consumedMarker = request.cookies.get(SERVICE_SUCCESS_FLASH_CONSUMED_COOKIE)?.value;
-  const successFlash = request.method === "GET" && request.nextUrl.pathname === "/admin/prestations" && secret
+  const consumesServiceSuccess = request.method === "GET" && request.nextUrl.pathname === "/admin/prestations";
+  const consumesGallerySuccess = request.method === "GET" && request.nextUrl.pathname === "/admin/galerie";
+  const successCookie = consumesGallerySuccess ? GALLERY_SUCCESS_FLASH_COOKIE : SERVICE_SUCCESS_FLASH_COOKIE;
+  const successGuardCookie = consumesGallerySuccess ? GALLERY_SUCCESS_FLASH_GUARD_COOKIE : SERVICE_SUCCESS_FLASH_GUARD_COOKIE;
+  const successConsumedCookie = consumesGallerySuccess ? GALLERY_SUCCESS_FLASH_CONSUMED_COOKIE : SERVICE_SUCCESS_FLASH_CONSUMED_COOKIE;
+  const consumedMarker = request.cookies.get(successConsumedCookie)?.value;
+  const verifiedSuccessFlash = (consumesServiceSuccess || consumesGallerySuccess) && secret
     ? verifyServiceSuccessFlash({
-      token: request.cookies.get(SERVICE_SUCCESS_FLASH_COOKIE)?.value,
-      guard: request.cookies.get(SERVICE_SUCCESS_FLASH_GUARD_COOKIE)?.value,
+      token: request.cookies.get(successCookie)?.value,
+      guard: request.cookies.get(successGuardCookie)?.value,
       consumedMarker,
       secret,
     })
     : null;
-  if (successFlash) requestHeaders.set(SERVICE_SUCCESS_FLASH_HEADER, successFlash.kind);
+  const successFlash = verifiedSuccessFlash && (
+    (consumesServiceSuccess && parseServiceSuccessFlash(verifiedSuccessFlash.kind))
+    || (consumesGallerySuccess && parseGallerySuccessFlash(verifiedSuccessFlash.kind))
+  ) ? verifiedSuccessFlash : null;
+  if (successFlash) requestHeaders.set(consumesGallerySuccess ? GALLERY_SUCCESS_FLASH_HEADER : SERVICE_SUCCESS_FLASH_HEADER, successFlash.kind);
   let response = NextResponse.next({ request: { headers: requestHeaders } });
   const cookieMutations = new Map<string, CookieMutation>();
   const responseHeaders = new Map<string, string>(Object.entries(PRIVATE_HEADERS));
@@ -107,17 +124,18 @@ export async function refreshAdminRequest(
     response = NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  const consumesSuccess = request.method === "GET" && request.nextUrl.pathname === "/admin/prestations";
-  if (consumesSuccess && (request.cookies.has(SERVICE_SUCCESS_FLASH_COOKIE) || request.cookies.has(SERVICE_SUCCESS_FLASH_GUARD_COOKIE))) {
-    const expiredOptions = { ...serviceSuccessCookieOptions(0), expires: new Date(0) };
-    cookieMutations.set(SERVICE_SUCCESS_FLASH_COOKIE, { name: SERVICE_SUCCESS_FLASH_COOKIE, value: "", options: expiredOptions });
-    cookieMutations.set(SERVICE_SUCCESS_FLASH_GUARD_COOKIE, { name: SERVICE_SUCCESS_FLASH_GUARD_COOKIE, value: "", options: expiredOptions });
+  const consumesSuccess = consumesServiceSuccess || consumesGallerySuccess;
+  const successCookieOptions = consumesGallerySuccess ? gallerySuccessCookieOptions : serviceSuccessCookieOptions;
+  if (consumesSuccess && (request.cookies.has(successCookie) || request.cookies.has(successGuardCookie))) {
+    const expiredOptions = { ...successCookieOptions(0), expires: new Date(0) };
+    cookieMutations.set(successCookie, { name: successCookie, value: "", options: expiredOptions });
+    cookieMutations.set(successGuardCookie, { name: successGuardCookie, value: "", options: expiredOptions });
   }
   if (consumesSuccess && successFlash && secret) {
-    cookieMutations.set(SERVICE_SUCCESS_FLASH_CONSUMED_COOKIE, {
-      name: SERVICE_SUCCESS_FLASH_CONSUMED_COOKIE,
+    cookieMutations.set(successConsumedCookie, {
+      name: successConsumedCookie,
       value: createServiceSuccessConsumedMarker(successFlash.nonce, secret, { consumedMarker }),
-      options: serviceSuccessCookieOptions(),
+      options: successCookieOptions(),
     });
   }
   response = applyAuthState(response);

@@ -19,7 +19,10 @@ export default async function AdminHomePage() {
           Administration
         </h1>
         <p>Votre session est autorisée. Gérez le catalogue visible sur le site public.</p>
-        <Link className="admin-dashboard-card" href="/admin/prestations"><strong>Prestations</strong><span>Consulter et mettre à jour le catalogue</span></Link>
+        <div className="admin-dashboard-grid">
+          <Link className="admin-dashboard-card" href="/admin/prestations"><strong>Prestations</strong><span>Consulter et mettre à jour le catalogue</span></Link>
+          <Link className="admin-dashboard-card" href="/admin/galerie"><strong>Galerie</strong><span>Consulter les photos et leur état de publication</span></Link>
+        </div>
       </section>
     </main>
   );

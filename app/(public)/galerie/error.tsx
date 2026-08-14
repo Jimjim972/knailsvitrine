@@ -1,0 +1,2 @@
+"use client";
+export default function GalleryError({ retry }: { error: Error & { digest?: string }; retry: () => void }) { return <main className="page-main gallery-page content-shell"><section className="admin-error-state"><h1>Galerie indisponible</h1><p>Les créations ne peuvent pas être chargées pour le moment.</p><button className="admin-button primary" type="button" onClick={retry}>Réessayer</button></section></main>; }

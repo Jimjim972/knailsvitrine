@@ -4,13 +4,27 @@ export const SERVICE_SUCCESS_FLASH_COOKIE = "kn-service-success";
 export const SERVICE_SUCCESS_FLASH_GUARD_COOKIE = "kn-service-success-guard";
 export const SERVICE_SUCCESS_FLASH_CONSUMED_COOKIE = "kn-service-success-consumed";
 export const SERVICE_SUCCESS_FLASH_HEADER = "x-kn-service-success";
+export const GALLERY_SUCCESS_FLASH_COOKIE = "kn-gallery-success";
+export const GALLERY_SUCCESS_FLASH_GUARD_COOKIE = "kn-gallery-success-guard";
+export const GALLERY_SUCCESS_FLASH_CONSUMED_COOKIE = "kn-gallery-success-consumed";
+export const GALLERY_SUCCESS_FLASH_HEADER = "x-kn-gallery-success";
 
 export type ServiceSuccessKind = "create" | "edit" | "delete";
+export type GallerySuccessKind = "gallery-create" | "gallery-edit" | "gallery-show" | "gallery-hide" | "gallery-replace" | "gallery-delete";
+type AdminSuccessKind = ServiceSuccessKind | GallerySuccessKind;
 
 const SERVICE_SUCCESS_MESSAGES: Record<ServiceSuccessKind, string> = {
   create: "La prestation a été créée.",
   edit: "La prestation a été modifiée.",
   delete: "La prestation a été supprimée.",
+};
+const GALLERY_SUCCESS_MESSAGES: Record<GallerySuccessKind, string> = {
+  "gallery-create": "La photo a été ajoutée.",
+  "gallery-edit": "La photo a été modifiée.",
+  "gallery-show": "La photo est active.",
+  "gallery-hide": "La photo est masquée.",
+  "gallery-replace": "La photo a été remplacée.",
+  "gallery-delete": "La photo a été supprimée.",
 };
 
 const FLASH_VERSION = "v1";
@@ -113,8 +127,20 @@ export function parseServiceSuccessFlash(value: string | undefined): ServiceSucc
   return value === "create" || value === "edit" || value === "delete" ? value : null;
 }
 
+export function parseGallerySuccessFlash(value: string | undefined): GallerySuccessKind | null {
+  return value === "gallery-create" || value === "gallery-edit" || value === "gallery-show" || value === "gallery-hide" || value === "gallery-replace" || value === "gallery-delete" ? value : null;
+}
+
+function parseAdminSuccessFlash(value: string | undefined): AdminSuccessKind | null {
+  return parseServiceSuccessFlash(value) ?? parseGallerySuccessFlash(value);
+}
+
 export function serviceSuccessMessage(kind: ServiceSuccessKind): string {
   return SERVICE_SUCCESS_MESSAGES[kind];
+}
+
+export function gallerySuccessMessage(kind: GallerySuccessKind): string {
+  return GALLERY_SUCCESS_MESSAGES[kind];
 }
 
 export function getServiceSuccessFlashSecret(): string | null {
@@ -128,7 +154,7 @@ export function requireServiceSuccessFlashSecret(): string {
   return secret;
 }
 
-export function issueServiceSuccessFlash(kind: ServiceSuccessKind, secret: string, options: IssueOptions = {}) {
+export function issueServiceSuccessFlash(kind: AdminSuccessKind, secret: string, options: IssueOptions = {}) {
   if (!isValidSecret(secret)) throw new Error("The service success secret is too short.");
   const issuedAt = options.nowMs ?? Date.now();
   const nonce = options.nonce ?? randomBytes(24).toString("base64url");
@@ -153,10 +179,10 @@ export function createServiceSuccessConsumedMarker(nonce: string, secret: string
   return serializeConsumedRegistry({ kind: "entries", entries: [...entries, [fingerprint, nowMs + FLASH_LIFETIME_MS]] }, secret);
 }
 
-export function verifyServiceSuccessFlash({ token, guard, consumedMarker, secret, nowMs = Date.now() }: VerifyOptions): { kind: ServiceSuccessKind; nonce: string } | null {
+export function verifyServiceSuccessFlash({ token, guard, consumedMarker, secret, nowMs = Date.now() }: VerifyOptions): { kind: AdminSuccessKind; nonce: string } | null {
   if (!token || !guard || !isValidSecret(secret)) return null;
   const [version, rawKind, rawIssuedAt, nonce, signature, ...extra] = token.split(".");
-  const kind = parseServiceSuccessFlash(rawKind);
+  const kind = parseAdminSuccessFlash(rawKind);
   if (extra.length > 0 || version !== FLASH_VERSION || !kind || !NONCE_PATTERN.test(nonce ?? "") || !signature || guard !== nonce) return null;
   if (!/^\d+$/.test(rawIssuedAt ?? "")) return null;
   const issuedAt = Number(rawIssuedAt);
@@ -180,5 +206,12 @@ export function serviceSuccessCookieOptions(maxAge = 60) {
     secure: process.env.NODE_ENV === "production",
     path: "/admin/prestations",
     maxAge,
+  };
+}
+
+export function gallerySuccessCookieOptions(maxAge = 60) {
+  return {
+    ...serviceSuccessCookieOptions(maxAge),
+    path: "/admin/galerie",
   };
 }

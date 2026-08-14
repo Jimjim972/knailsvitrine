@@ -41,7 +41,7 @@ export default async function ProtectedAdminLayout({ children }: Readonly<{ chil
         </div>
       </header>
       <nav className="admin-nav" aria-label="Navigation administration">
-        <div className="content-shell admin-nav-inner"><Link href="/admin">Dashboard</Link><Link href="/admin/prestations">Prestations</Link></div>
+        <div className="content-shell admin-nav-inner"><Link href="/admin">Dashboard</Link><Link href="/admin/prestations">Prestations</Link><Link href="/admin/galerie">Galerie</Link></div>
       </nav>
       {children}
     </div>
