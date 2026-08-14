@@ -18,7 +18,7 @@
 | Three category seeds | Exact codes, names and orders; service FK intact |
 | Category bounds and duplicate name | 2/80 and orders 0/max accepted; invalid/duplicate normalized names rejected |
 | Category anon/non-admin | Read allowed; insert/update/delete refused |
-| Category current admin | Read and insert allowed; update/delete remain refused |
+| Category current admin | Read/insert/update allowed; referenced delete rejected, empty delete allowed |
 
 ## Pure unit contracts
 
@@ -105,6 +105,8 @@ Supplementary tests, outside the fixed count, cover a non-integer duration, a mi
 - Delete target out-of-band locally before confirmation and verify no false success.
 - Consume create success, consume delete success, then replay the first proof and verify no success appears.
 - Create a category, reject its normalized duplicate, verify one dynamic select option, create a service in it and observe the generic public section.
+- Rename and reorder that category without changing its code; verify form/public propagation.
+- Confirm referenced-category deletion is refused with guidance, remove the final service, then confirm category deletion and one-use success.
 
 ### Cross-story public projection
 

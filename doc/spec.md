@@ -113,6 +113,8 @@ Les trois catégories initiales conservent leur présentation visuelle dédiée.
 | `PRE-ADM-08` | Empêcher les doubles soumissions pendant une opération en cours. |
 | `PRE-ADM-09` | Créer une nouvelle catégorie depuis la gestion des prestations avec un nom et un ordre d’affichage. |
 | `PRE-ADM-10` | Proposer immédiatement toutes les catégories enregistrées dans les formulaires de création et de modification d’une prestation. |
+| `PRE-ADM-11` | Lister les catégories avec leur ordre et leur nombre de prestations, puis permettre de modifier leur nom et leur ordre. |
+| `PRE-ADM-12` | Supprimer une catégorie après confirmation uniquement lorsqu’aucune prestation ne la référence ; sinon refuser sans suppression partielle et expliquer l’action requise. |
 
 ### 7.3 Galerie publique
 
@@ -182,7 +184,9 @@ Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remp
 - le nom d’une catégorie est obligatoire, contient entre 2 et 80 caractères et reste unique sans tenir compte de la casse ni des espaces périphériques ;
 - le code technique d’une nouvelle catégorie est généré côté serveur et n’est jamais fourni par le navigateur ;
 - l’ordre d’une catégorie est un entier positif ou nul ; les égalités sont départagées par date de création puis par code ;
-- la création de catégorie est incluse dans le MVP, mais son renommage, sa suppression et la gestion de son propre visuel restent hors périmètre ;
+- la création, le renommage, la modification d’ordre et la suppression unitaire d’une catégorie sont inclus dans le MVP ; son code technique reste stable ;
+- une catégorie référencée par au moins une prestation ne peut pas être supprimée : les prestations doivent d’abord être déplacées ou supprimées ;
+- la gestion d’un visuel propre à chaque catégorie reste hors périmètre ;
 - le prix est positif ou nul lorsqu'il est renseigné ;
 - le type de prix vaut `fixed`, `starting_at` ou `quote` ;
 - `fixed` et `starting_at` exigent un prix renseigné ; `quote` exige un prix absent ;
@@ -356,7 +360,7 @@ Index recommandés :
 | `created_at` | `timestamptz` | Obligatoire, date serveur par défaut |
 | `updated_at` | `timestamptz` | Obligatoire, mis à jour lors des modifications |
 
-Les rôles `anon` et `authenticated` peuvent lire les catégories. Seul l’administrateur courant peut en créer une. Les droits de modification et de suppression ne sont pas accordés dans ce périmètre.
+Les rôles `anon` et `authenticated` peuvent lire les catégories. Seul l’administrateur courant peut créer, renommer, réordonner et supprimer une catégorie. La clé étrangère `prestations_categorie_fkey` interdit toute suppression tant qu’une prestation référence la catégorie ; aucune suppression en cascade n’est autorisée.
 
 ### 10.3 Table `photos_galerie`
 
@@ -411,7 +415,7 @@ Index partiel `photos_galerie_public_variant_order_idx` sur `(variante_affichage
 | Création/modification/suppression de prestations | Refusé | Refusé | Autorisé |
 | Lecture des catégories de prestations | Lecture | Lecture | Lecture |
 | Création d’une catégorie de prestations | Refusé | Refusé | Autorisé |
-| Modification/suppression d’une catégorie de prestations | Refusé | Refusé | Refusé dans ce périmètre |
+| Modification/suppression d’une catégorie de prestations | Refusé | Refusé | Autorisé, avec suppression limitée aux catégories non référencées |
 | Métadonnées des photos actives et cohérentes (`actif=true AND file_state='ready'`) | Lecture | Lecture | Lecture |
 | Octets des photos actives et cohérentes | Lecture réautorisée | Lecture réautorisée | Lecture |
 | Octets des photos inactives, non `ready` ou supprimées, même via une URL applicative connue | Refusé | Refusé | Selon état administratif courant |
@@ -576,6 +580,8 @@ La fondation Supabase vérifie séparément les droits de suppression de la lign
 - affichage correct des trois catégories initiales et de toute nouvelle catégorie contenant une prestation active ;
 - absence publique d’une catégorie vide ou ne contenant que des prestations masquées ;
 - création administrative d’une catégorie valide, refus d’un doublon casse/espaces et disponibilité immédiate dans le formulaire de prestation ;
+- renommage et réordonnancement immédiatement visibles dans les formulaires et sur la prochaine consultation publique ;
+- refus explicite de supprimer une catégorie utilisée, puis suppression confirmée de cette même catégorie après retrait de sa dernière prestation ;
 - ordre des prestations conforme à l'administration ;
 - formats de prix corrects ;
 - badge facultatif correctement affiché ;
@@ -598,7 +604,7 @@ La fonctionnalité est considérée comme terminée lorsque :
 1. les prestations codées en dur ont été remplacées par les données Supabase ;
 2. les photos administrables sont stockées dans Supabase Storage ;
 3. le design public existant est conservé, avec zéro décalage de mise en page attribuable aux images dans le scénario automatisé et les seuils colorimétriques définis en 15.3 ;
-4. l'administrateur peut gérer les prestations et les photos depuis `/admin`, et créer les catégories nécessaires aux prestations ;
+4. l'administrateur peut gérer les prestations, leurs catégories et les photos depuis `/admin`, y compris renommer, réordonner et supprimer sûrement une catégorie vide ;
 5. un visiteur ou un utilisateur non-admin ne peut effectuer aucune mutation ;
 6. RLS et les politiques Storage ont été testées ;
 7. les images sont validées côté navigateur puis leurs octets finaux sont revalidés côté serveur, compressés à 1 Mio maximum et accompagnés de leurs métadonnées ;

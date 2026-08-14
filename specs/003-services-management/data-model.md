@@ -9,7 +9,7 @@ La fonctionnalité réutilise `public.prestations`. La migration initiale 003 a 
 3. insérer les huit prestations statiques avec identifiants et ordres déterministes ;
 4. laisse les politiques de mutation, le trigger `updated_at` et l'index public partiel en place ;
 5. crée `public.categories_prestations`, y reprend les trois catégories initiales et remplace le CHECK fermé de `prestations.categorie` par une clé étrangère ;
-6. accorde la lecture des catégories à `anon`/`authenticated` et l’insertion au seul administrateur courant sous RLS.
+6. accorde la lecture des catégories à `anon`/`authenticated` et les mutations au seul administrateur courant sous RLS ; une seconde migration ouvre explicitement `UPDATE`/`DELETE` à `authenticated` tout en laissant les politiques refuser les non-admins.
 
 Les types Supabase sont régénérés après la migration même si `numeric` continue d'être représenté par `number` dans le type généré.
 
@@ -133,7 +133,16 @@ createdAt / updatedAt: timestamp strings
 public presentation: initial override by code or generic fallback
 ```
 
-La liste est lisible par tous les rôles. L’administration peut ajouter une ligne, mais ne peut pas la renommer ni la supprimer dans ce périmètre.
+La liste est lisible par tous les rôles. L’administration courante peut ajouter, renommer, réordonner et supprimer une ligne. Le code primaire n’est jamais modifié. `prestations.categorie` utilise `ON UPDATE RESTRICT ON DELETE RESTRICT` : une catégorie référencée par une prestation active ou masquée ne peut pas être supprimée, et aucune cascade ou réaffectation implicite n’est admise.
+
+## Application model: `AdminServiceCategory`
+
+```text
+ServiceCategory fields
+serviceCount: total number of active and hidden services referencing the code
+```
+
+Le compteur est calculé lors de la lecture administrative à partir des catégories et des références de prestations lues sous la session courante. Il sert à expliquer le blocage attendu, sans remplacer la clé étrangère comme garantie de concurrence.
 
 ## Application model: exact price
 

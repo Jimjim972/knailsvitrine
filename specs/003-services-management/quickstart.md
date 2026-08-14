@@ -67,7 +67,7 @@ Avant tout déploiement hébergé futur, exporter les prestations et confirmer q
 
 Après rédaction, ajouter `supabase/tests/database/08_services_management.sql` et inclure ce fichier dans le script pgTAP existant.
 
-L’extension catégories doit être créée séparément par la même procédure CLI (`npx supabase migration new service_categories`). Elle crée `categories_prestations`, reprend les trois codes initiaux, remplace le CHECK de `prestations.categorie` par une clé étrangère, pose grants/RLS et ajoute `supabase/tests/database/10_service_categories.sql` à tous les runners.
+L’extension catégories doit être créée séparément par la même procédure CLI (`npx supabase migration new service_categories`). Elle crée `categories_prestations`, reprend les trois codes initiaux, remplace le CHECK de `prestations.categorie` par une clé étrangère, pose les grants/RLS initiaux et ajoute `supabase/tests/database/10_service_categories.sql` à tous les runners. L’extension du cycle de vie utilise ensuite une nouvelle migration CLI (`npx supabase migration new service_category_management`) qui ajoute les grants `UPDATE`/`DELETE` et les politiques administrateur correspondantes sans modifier la clé étrangère restrictive.
 
 ## 3. Rebuild the local database
 
@@ -103,7 +103,7 @@ Attendus :
 - anon et non-admin lisent uniquement les actives ;
 - seul l'admin courant lit les masquées et effectue CRUD ;
 - rôle retiré, session révoquée ou expirée refusés au contrôle suivant ;
-- catégories lisibles publiquement, insertion autorisée au seul admin courant, update/delete refusés à tous les rôles applicatifs ;
+- catégories lisibles publiquement, CRUD autorisé au seul admin courant, update/delete refusés aux rôles anon et non-admin, suppression d’une catégorie référencée refusée par la clé étrangère et suppression vide autorisée ;
 - l'avertissement de politiques permissives multiples n'existe plus pour `prestations` ;
 - l'éventuel avertissement historique de `photos_galerie` est signalé séparément, sans élargir 003.
 
@@ -137,11 +137,11 @@ Suivre cet ordre afin de garder une bascule vérifiable :
 2. ajouter validation/normalisation exacte et tests unitaires rouges ;
 3. activer `cacheComponents` et migrer les deux configs admin vers `instant = false` ;
 4. ajouter la DAL admin non cachée et la liste de consultation ;
-5. ajouter les quatre actions de prestation et l’action de catégorie, puis les routes/composants admin ;
+5. ajouter les quatre actions de prestation et les trois actions de catégorie, puis les routes/composants admin ;
 6. ajouter le client public anonyme sans cookies et la DAL publique cachée ;
 7. brancher `/services` sur les catégories dynamiques, conserver les trois présentations initiales et omettre les sections vides ;
 8. supprimer les tableaux statiques seulement lorsque le reset local contient les huit lignes ;
-9. vérifier l'intégration croisée des cinq mutations de prestation et la création/utilisation d’une catégorie sur une nouvelle consultation publique ;
+9. vérifier l'intégration croisée des cinq mutations de prestation et du cycle créer/renommer/utiliser/refuser-suppression/supprimer d’une catégorie sur une nouvelle consultation publique ;
 10. mettre à jour l'accueil admin, les tests 002 devenus obsolètes et la documentation du prix et du flux.
 
 La lecture publique utilise `use cache`, `cacheLife("days")`, `cacheTag("prestations")`. Le composant de cartes appelle `io()` avant cette lecture et reste sous `Suspense` : le shell contient le chargement, tandis que le résultat partagé reste caché. Les pages admin, lignes masquées, autorisations et clients SSR ne reçoivent aucune directive de cache.
@@ -385,4 +385,10 @@ Sur [`dev--friendly-cactus-227b77.netlify.app`](https://dev--friendly-cactus-227
 - les trois sections publiques, neuf cartes et neuf liens « Réserver » ;
 - zéro erreur ou avertissement dans la console navigateur pendant ces contrôles.
 
-Aucune fausse catégorie valide n’a été persistée sur le projet hébergé, car le périmètre demandé ne fournit volontairement ni suppression ni renommage de catégorie. Le scénario complet SC-014 reste donc un test utilisateur à réaliser avec le vrai nom de la prochaine catégorie métier ; le parcours persistant équivalent est couvert localement sous Chromium et WebKit.
+Cette validation correspond à l’incrément initial de création. L’extension suivante ajoute désormais le renommage et la suppression sûre ; ses preuves locales et hébergées sont consignées séparément après application de `20260814164809_service_category_management.sql`. Les tests utilisateurs SC-014 et SC-016 restent des validations humaines chronométrées distinctes des parcours Playwright.
+
+### Extension « Cycle de vie des catégories »
+
+Les contrôles locaux de `20260814164809_service_category_management.sql` réussissent : reset complet, 356 assertions pgTAP, lint base sans erreur, advisors Supabase sans nouvel avertissement, drift des types nul, 164 tests unitaires, ESLint, TypeScript et build Next.js 16.3 de production. La matrice Prestations passe 40 scénarios Chromium/WebKit avec 4 scénarios volontairement isolés ; les scénarios d’indisponibilité isolés passent et le scan du build ne trouve aucune valeur Supabase privilégiée. La couverture responsive dédiée passe 6 scénarios sous Chromium/WebKit à 320, 768 et 1 024 px après passage des cartes administratives en colonne à 768 px. L’advisor conserve uniquement l’avertissement historique de politiques SELECT multiples sur `photos_galerie`.
+
+Le parcours automatisé crée une catégorie, refuse son doublon normalisé, conserve son code pendant le renommage et le changement d’ordre, publie une prestation dans la section renommée, refuse la suppression tant que cette prestation existe, puis supprime la prestation et la catégorie vide. Les données temporaires sont absentes à la fin du scénario. SC-016 reste le test utilisateur humain chronométré à réaliser sans aide.

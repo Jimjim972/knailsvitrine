@@ -332,11 +332,11 @@ Après Foundational, répartir par frontières de fichiers :
 - [x] T076 MEDIUM Journaliser les échecs d'autorisation indisponible, de mutation et d'invalidation des actions avec un diagnostic strictement limité à la catégorie, la phase et le même identifiant de corrélation que l'état récupérable retourné, puis prouver l'absence d'erreur Supabase brute, de donnée de session et de détail d'infrastructure dans `lib/services/action-core.ts`, `lib/services/diagnostics.ts`, `tests/unit/services/actions.test.ts` et `tests/unit/services/diagnostics.test.ts`, conformément à la décision 12 du plan et SC-012 (partial)
 - [x] T077 MEDIUM Contrôler le champ de montant afin que le passage à « Sur devis » efface immédiatement toute valeur antérieure et le désactive, puis que le retour à « Prix fixe » ou « À partir de » exige une nouvelle valeur valide sans casser la conservation des autres champs après erreur, avec couverture dans `app/(admin)/admin/(protected)/prestations/_components/service-form.tsx` et `tests/services-management/crud.spec.ts`, conformément au cas limite tarifaire de la spécification, à FR-008 et au contrat `admin-services-ui.md` (partial)
 
-## Phase 12: Catégories administrables à la création
+## Phase 12: Catégories administrables à la création (incrément livré)
 
-**Goal**: Permettre « Administration → Prestations → Nouvelle catégorie », puis l’utilisation immédiate de cette catégorie dans une prestation et sa projection publique non vide, sans ouvrir le renommage ni la suppression.
+**Goal**: Permettre « Administration → Prestations → Nouvelle catégorie », puis l’utilisation immédiate de cette catégorie dans une prestation et sa projection publique non vide. Le cycle de vie complet est ajouté par la phase 13.
 
-**Independent Test**: Créer une catégorie valide, refuser son doublon normalisé, vérifier son option unique dans le formulaire, créer une prestation active liée et observer sa section publique générique ; vérifier en parallèle que anon/non-admin ne peuvent pas insérer et que personne ne peut update/delete une catégorie dans ce périmètre.
+**Independent Test**: Créer une catégorie valide, refuser son doublon normalisé, vérifier son option unique dans le formulaire, créer une prestation active liée et observer sa section publique générique ; vérifier en parallèle que anon/non-admin ne peuvent pas insérer.
 
 - [x] T078 Mettre à jour `spec.md`, `plan.md`, `research.md`, `data-model.md`, les contrats et `quickstart.md` avec le périmètre création seule, le fallback visuel, l’omission des catégories vides et les critères SC-013/SC-014
 - [x] T079 Créer par la CLI `supabase/migrations/20260814132648_service_categories.sql` avec table, contraintes, seed des trois catégories, clé étrangère, grants, RLS, index et trigger
@@ -352,3 +352,19 @@ Après Foundational, répartir par frontières de fichiers :
 - [ ] T089 Réaliser le test utilisateur SC-014 chronométré sur la preview : catégorie → prestation active → section publique en moins de 3 minutes, sans aide
 - [x] T090 Vérifier la cible Supabase de test, appliquer uniquement la migration catégories, pousser `dev` et attendre le déploiement Netlify réussi sans toucher la production
 - [x] T091 Tester sur Netlify `dev` les parcours catégorie, prestations et régressions publiques, puis consigner les résultats et limites manuelles dans `quickstart.md`
+
+## Phase 13: Cycle de vie complet des catégories
+
+**Goal**: Ajouter la liste, le renommage, le réordonnancement et la suppression sûre d’une catégorie sans cascade ni faux succès.
+
+**Independent Test**: Créer une catégorie, la renommer et changer son ordre sans changer son code, l’utiliser dans une prestation, vérifier le refus de suppression, retirer la prestation puis supprimer la catégorie ; anon/non-admin restent refusés pour chaque mutation.
+
+- [x] T092 Mettre à jour `doc/spec.md`, `doc/design.md`, `doc/architecture.md`, `spec.md`, `plan.md`, `research.md`, `data-model.md`, les contrats et `quickstart.md` afin d’inclure renommage/réordonnancement/suppression et SC-015/SC-016
+- [x] T093 Créer par la CLI `supabase/migrations/20260814164809_service_category_management.sql` avec grants explicites `UPDATE`/`DELETE` et politiques RLS admin séparées, sans cascade
+- [x] T094 Ajouter les lectures de catégorie et compteurs, puis `updateServiceCategoryAction`/`deleteServiceCategoryAction` avec code stable, doublon sûr, conflit FK, cible absente, invalidation et flashes authentifiés
+- [x] T095 Créer la liste `/admin/prestations/categories`, la route de modification, les états loading/error, le formulaire partagé et le dialogue de suppression accessible, puis exposer l’accès « Catégories » depuis Prestations
+- [x] T096 Étendre pgTAP, unitaires et Playwright pour grants/RLS, renommage/ordre, propagation publique, suppression référencée refusée et suppression vide confirmée
+- [x] T097 Exécuter reset, pgTAP complet, lint/advisors Supabase, drift des types, unitaires, ESLint, TypeScript, build et suites Playwright Chromium/WebKit ; corriger tout échec
+- [ ] T098 Vérifier la cible Supabase de test, appliquer uniquement la migration du cycle de vie, commit/push `dev` et attendre le branch deploy Netlify réussi sans toucher la production
+- [ ] T099 Tester sur Netlify `dev` les routes de gestion, le rendu public et les régressions Prestations, puis consigner les résultats et toute limite sans laisser de donnée de test
+- [ ] T100 Réaliser le test utilisateur SC-016 chronométré sur la preview sans aide

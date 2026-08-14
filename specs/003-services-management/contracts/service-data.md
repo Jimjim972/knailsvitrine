@@ -91,6 +91,10 @@ Même sélection que l'admin list, filtrée par `id`, résultat au plus un.
 - Ordre `ordre_affichage`, `created_at`, `code`.
 - La liste alimente les formulaires ; une réponse vide est valide et désactive la création/modification de prestation.
 
+## Admin category management reads
+
+`getAdminServiceCategory(code)` valide le code, sélectionne les cinq colonnes explicites et retourne une ligne ou `null`; il ne met jamais en cache une lecture administrative. `getAdminServiceCategoriesWithCounts()` lit en parallèle les catégories ordonnées et uniquement `prestations.categorie`, puis calcule `serviceCount` pour les lignes actives comme masquées. Ce compteur est informatif : la clé étrangère reste la décision atomique au moment d’une suppression.
+
 ## Category grouping
 
 Le mapper initialise un groupe par catégorie lue en base, selon l’ordre de catégorie. Les services dont la catégorie n’est pas présente ne sont jamais inventés. Une catégorie sans ligne active n’est pas rendue publiquement.
@@ -99,7 +103,7 @@ Le mapper initialise un groupe par catégorie lue en base, selon l’ordre de ca
 
 - `select("*")` ;
 - client SSR cookie-aware dans `getPublicServices()` ;
-- cache de `getAdminServices()`, `getAdminService()` ou d'une décision d'autorisation ;
+- cache de `getAdminServices()`, `getAdminService()`, des lectures administratives de catégorie ou d'une décision d'autorisation ;
 - transmission de `image_path`, `updated_at` ou `actif` au composant public ;
 - dépendance sur l'ordre lexical des codes de catégorie ;
 - résultat de secours issu des anciennes constantes statiques.

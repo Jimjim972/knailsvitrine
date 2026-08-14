@@ -156,11 +156,11 @@
 - Utiliser uniquement des mocks unitaires : rejeté, ils ne prouvent pas le rendu réel des `error.tsx`, des annonces et du retry dans le build de production.
 - Insérer des noms ou UUID sentinelles en base : rejeté, une donnée métier ne doit jamais activer un comportement de test.
 
-## Decision 14: rendre les catégories créables sans élargir leur cycle de vie
+## Decision 14: administrer le cycle de vie unitaire des catégories
 
-**Decision**: Ajouter `public.categories_prestations` avec un code texte stable généré côté serveur, un nom unique normalisé, un ordre et les timestamps. Reprendre les trois catégories initiales, remplacer le CHECK fermé de `prestations.categorie` par une clé étrangère, autoriser la lecture publique et uniquement l’insertion par l’administrateur courant. Le renommage, la suppression et la personnalisation visuelle restent hors périmètre. Les catégories vides sont omises publiquement ; les nouvelles catégories non vides utilisent un fallback visuel générique.
+**Decision**: Ajouter `public.categories_prestations` avec un code texte stable généré côté serveur, un nom unique normalisé, un ordre et les timestamps. Reprendre les trois catégories initiales, remplacer le CHECK fermé de `prestations.categorie` par une clé étrangère `ON UPDATE RESTRICT ON DELETE RESTRICT`, autoriser la lecture publique et réserver `INSERT`/`UPDATE`/`DELETE` à l’administrateur courant. Le code n’est jamais éditable. Une suppression encore référencée devient un conflit récupérable ; aucune cascade ni réaffectation implicite n’est réalisée. La personnalisation visuelle reste hors périmètre. Les catégories vides sont omises publiquement ; les nouvelles catégories non vides utilisent un fallback visuel générique.
 
-**Rationale**: La demande exige « Administration → Prestations → Nouvelle catégorie ». Une table dédiée évite toute dérive entre formulaire, DAL et contrainte SQL. Les grants explicites et RLS restent deux barrières distinctes, conformément au changement Data API Supabase courant. Le code serveur empêche le navigateur d’imposer une identité technique ou d’entrer en collision avec les codes initiaux.
+**Rationale**: La demande exige désormais « Administration → Prestations → Catégories » avec création, renommage et suppression. Une table dédiée évite toute dérive entre formulaire, DAL et contrainte SQL. Les grants explicites et RLS restent deux barrières distinctes, conformément au changement Data API Supabase courant. Le code serveur empêche le navigateur d’imposer ou modifier une identité technique. La restriction de clé étrangère protège aussi contre une course entre le compteur affiché et la confirmation de suppression.
 
 **Alternatives considered**:
 

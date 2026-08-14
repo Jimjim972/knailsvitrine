@@ -118,6 +118,24 @@ L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestat
 4. **Given** une catégorie vide, **When** le catalogue public est consulté, **Then** elle n’est pas affichée ; dès qu’une prestation active lui est liée, elle apparaît avec le visuel générique de l’institut.
 5. **Given** un visiteur, un non-admin ou une ancienne session révoquée, **When** une insertion directe est tentée, **Then** elle est refusée par les droits et RLS.
 
+---
+
+### User Story 7 - Administrer le cycle de vie des catégories (Priority: P2)
+
+L’administrateur consulte les catégories avec leur ordre et leur nombre de prestations, renomme ou réordonne une catégorie, puis supprime une catégorie devenue vide après une confirmation explicite.
+
+**Why this priority**: Une catégorie créée par erreur ou devenue obsolète doit pouvoir être corrigée sans intervention SQL, tout en protégeant les prestations existantes contre une suppression en cascade.
+
+**Independent Test**: Créer une catégorie, la renommer et changer son ordre, vérifier la propagation dans le formulaire et le catalogue, constater que sa suppression est refusée lorsqu’une prestation la référence, retirer cette prestation puis confirmer la suppression de la catégorie.
+
+**Acceptance Scenarios**:
+
+1. **Given** les catégories enregistrées, **When** l’administrateur ouvre « Catégories », **Then** chaque ligne affiche son nom, son ordre, son nombre de prestations et les actions Modifier/Supprimer.
+2. **Given** une catégorie existante, **When** l’administrateur modifie son nom et son ordre avec des valeurs valides, **Then** son code reste identique et les nouvelles valeurs sont visibles immédiatement dans l’administration et sur la prochaine consultation publique.
+3. **Given** une catégorie référencée par une ou plusieurs prestations, **When** sa suppression est confirmée, **Then** aucune ligne n’est supprimée et un message demande de déplacer ou supprimer les prestations concernées.
+4. **Given** une catégorie sans prestation, **When** sa suppression est confirmée, **Then** seule cette catégorie disparaît et un succès réel est annoncé.
+5. **Given** un visiteur, un non-admin ou une ancienne session révoquée, **When** une modification ou suppression directe est tentée, **Then** elle est refusée par les grants et RLS.
+
 ### Edge Cases
 
 - Les espaces périphériques sont supprimés des champs textuels ; un champ obligatoire composé seulement d'espaces est refusé.
@@ -136,6 +154,8 @@ L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestat
 - Un nom de catégorie de 2 ou 80 caractères est accepté ; un nom vide, trop court, trop long ou déjà présent après normalisation est refusé.
 - Un code de catégorie est généré côté serveur sous la forme `category_<32 caractères hexadécimaux>` et n'est jamais accepté depuis le formulaire.
 - Une catégorie supprimée ou inconnue entre l’ouverture du formulaire et sa soumission produit une erreur de catégorie sans créer ni modifier la prestation.
+- Une catégorie supprimée hors bande avant sa modification ou sa suppression ne produit aucun faux succès.
+- Une catégorie contenant une prestation active ou masquée reste non supprimable ; le statut public de la prestation ne change pas cette protection.
 
 ## Requirements *(mandatory)*
 
@@ -173,8 +193,12 @@ L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestat
 - **FR-030**: La gestion des prestations MUST supporter le volume initial d'environ 40 éléments sans imposer de pagination et MUST préserver un ordre stable lors des actualisations successives.
 - **FR-031**: Le système MUST permettre à l’administrateur courant de créer une catégorie avec un nom normalisé de 2 à 80 caractères et un ordre entier de 0 à 2 147 483 647 ; le code technique MUST être généré exclusivement côté serveur.
 - **FR-032**: Le nom d’une catégorie MUST être unique sans tenir compte de la casse ni des espaces périphériques, et un doublon MUST produire une erreur de champ sans faux succès.
-- **FR-033**: Les catégories MUST être lisibles par `anon` et `authenticated`; seul l’administrateur courant MUST pouvoir insérer, tandis que la modification et la suppression MUST rester refusées dans ce périmètre.
-- **FR-034**: Après une création confirmée, le tag `prestations` MUST être invalidé, la catégorie MUST être immédiatement disponible dans les formulaires et sa section publique MUST apparaître en moins de cinq secondes dès qu’elle contient une prestation active.
+- **FR-033**: Les catégories MUST être lisibles par `anon` et `authenticated`; seul l’administrateur courant MUST pouvoir insérer, modifier ou supprimer sous des grants explicites et des politiques RLS séparées.
+- **FR-034**: Après une création, modification ou suppression confirmée, le tag `prestations` MUST être invalidé ; le nouvel état MUST être immédiatement visible dans l’administration et dans les formulaires, puis sur une nouvelle consultation publique en moins de cinq secondes lorsqu’il affecte une section non vide.
+- **FR-035**: La gestion des catégories MUST lister chaque catégorie avec son nom, son ordre, son nombre total de prestations actives ou masquées et ses actions disponibles.
+- **FR-036**: La modification d’une catégorie MUST accepter uniquement son nom et son ordre validés, conserver son code technique et refuser les doublons normalisés sans mutation partielle.
+- **FR-037**: La suppression d’une catégorie MUST exiger une confirmation accessible et MUST être refusée sans suppression partielle tant qu’au moins une prestation active ou masquée la référence ; aucune cascade ni réaffectation implicite n’est autorisée.
+- **FR-038**: Une cible de catégorie invalide, absente ou supprimée hors bande MUST produire un état récupérable sans faux succès ni détail fournisseur.
 
 ### Scope Boundaries
 
@@ -187,12 +211,12 @@ L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestat
 - états chargement, vide, attente, succès, erreur, session expirée et confirmation de suppression ;
 - remplacement des prestations codées en dur par le catalogue administrable, avec reprise des huit contenus existants ;
 - lecture publique des prestations actives, regroupement dans les catégories administrables et actualisation sans déploiement ;
-- création unitaire d’une catégorie avec nom et ordre, puis utilisation immédiate dans une prestation ;
+- création, liste, renommage, réordonnancement et suppression sûre d’une catégorie, puis utilisation immédiate dans une prestation ;
 - maintien du design, du responsive, de l'accessibilité et du parcours de contact existants.
 
 **Excluded**:
 
-- renommage, modification d’ordre après création, suppression ou personnalisation visuelle des catégories ;
+- personnalisation visuelle des catégories ;
 - ajout ou gestion d'une image propre à chaque prestation ;
 - import générique par fichier, export, opérations groupées et historique complet des modifications ;
 - recherche, filtrage avancé et pagination, non nécessaires au volume du MVP ;
@@ -203,7 +227,7 @@ L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestat
 ### Key Entities *(include if feature involves data)*
 
 - **Prestation**: Offre commerciale administrable caractérisée par un identifiant stable, un nom, une description, une référence à une catégorie enregistrée, une présentation de prix, un montant conditionnel, une durée facultative, un badge facultatif, un ordre, une visibilité et des dates de création et de modification.
-- **Catégorie de prestation**: Groupe administrable à la création, caractérisé par un code serveur stable, un nom unique, un ordre et des dates. Les trois catégories initiales ont un visuel dédié ; les nouvelles utilisent le visuel générique.
+- **Catégorie de prestation**: Groupe administrable caractérisé par un code serveur stable et non modifiable, un nom unique, un ordre et des dates. Elle peut être renommée, réordonnée et supprimée uniquement lorsqu’aucune prestation ne la référence. Les trois catégories initiales ont un visuel dédié ; les nouvelles utilisent le visuel générique.
 - **Présentation de prix**: Règle liant le type commercial au montant : prix fixe et prix de départ exigent un montant exact, tandis que « Sur devis » exclut tout montant.
 - **État de visibilité**: État actif ou masqué d'une prestation. Il contrôle sa présence publique sans empêcher sa consultation et sa réactivation par l'administrateur.
 - **État de formulaire**: Résultat récupérable d'une création, modification ou suppression comprenant l'attente, les erreurs de champs, le refus d'accès, l'indisponibilité ou le succès confirmé.
@@ -226,13 +250,15 @@ L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestat
 - **SC-012**: Les contrôles des messages utilisateur et sorties partageables trouvent 0 secret, jeton, cookie, trace, requête brute, détail d'infrastructure ou donnée de session.
 - **SC-013**: Dans 100 % d’une matrice comprenant création valide, limites 2/80 caractères, ordre 0/maximal, doublon casse/espaces et tentative non-admin, seule la création valide autorisée persiste une catégorie.
 - **SC-014**: Un utilisateur cible non technique crée une catégorie, la sélectionne pour une prestation et retrouve la prestation dans la nouvelle section publique en moins de 3 minutes, sans aide ni modification de code.
+- **SC-015**: Dans 100 % d’une matrice comprenant renommage valide, changement d’ordre, doublon normalisé, cible absente, tentative non-admin, suppression référencée et suppression vide, seuls le renommage autorisé et la suppression vide persistent ; le code reste identique et aucune prestation n’est supprimée implicitement.
+- **SC-016**: Lors d’un test utilisateur standardisé, un utilisateur cible non technique renomme une catégorie, comprend le refus de suppression lorsqu’elle est utilisée, retire sa dernière prestation puis supprime la catégorie en moins de 3 minutes, sans aide et sans suppression non confirmée.
 
 ## Assumptions
 
 - Les fonctionnalités `001-supabase-foundation` et `002-admin-authentication` sont disponibles et fournissent respectivement le catalogue persistant avec ses règles d'accès et l'espace administrateur protégé.
 - Le MVP utilise un seul niveau de droit administrateur et un faible volume d'environ 40 prestations ; aucune collaboration simultanée ni résolution avancée de conflits n'est nécessaire.
 - En cas de modifications concurrentes exceptionnelles, la dernière mutation confirmée devient l'état courant ; une cible disparue ou devenue indisponible produit un message récupérable plutôt qu'un faux succès.
-- Les trois catégories initiales conservent leurs photographies configurées par le produit. Le nom et l’ordre des nouvelles catégories sont administrables à la création ; leur visuel utilise le fallback générique.
+- Les trois catégories initiales conservent leurs photographies configurées par le produit. Le nom et l’ordre de toutes les catégories sont administrables ; leur code reste stable et les catégories sans présentation dédiée utilisent le fallback générique.
 - Tous les prix sont exprimés en euros et saisis en contexte français ; aucune taxe, remise, devise secondaire ou calcul de total ne fait partie de la fonctionnalité.
 - Le champ d'image associé à une prestation reste inutilisé dans ce périmètre ; les visuels publics demeurent ceux des catégories existantes.
 - L'action « Réserver » conserve son sens actuel de prise de contact et n'ouvre pas un système de réservation.

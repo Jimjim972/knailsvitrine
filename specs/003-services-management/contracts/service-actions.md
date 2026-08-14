@@ -40,8 +40,9 @@ validation { fieldErrors, values }
 session_expired { message, values? }
 unavailable { message, correlationId, values? }
 not_found { message }
+conflict { message }
 internal { message, correlationId, values? }
-success { message, serviceId }
+success { message, serviceId | categoryCode }
 ```
 
 No state includes a raw database row, SQL text, provider error, JWT, cookie, session identifier, full claims or secret.
@@ -143,7 +144,30 @@ After `requireAdminAction()`, generate `category_<uuid-v4-without-hyphens>` on t
 
 ### Success and failure
 
-Exactly one returned code confirms success, then `updateTag("prestations")` runs and the authenticated one-use `category-create` flash redirects to `/admin/prestations`. Validation, revoked session, non-admin access, duplicate name, network failure or missing returned row never announces success and never exposes provider details.
+Exactly one returned code confirms success, then `updateTag("prestations")` runs and the authenticated one-use `category-create` flash redirects to `/admin/prestations/categories`. Validation, revoked session, non-admin access, duplicate name, network failure or missing returned row never announces success and never exposes provider details.
+
+## `updateServiceCategoryAction(previousState, formData)`
+
+### Input and mutation
+
+`categoryCode` doit satisfaire le format fermé mais ne sert qu’à cibler la ligne. Après réautorisation, `name` et `displayOrder` suivent les mêmes bornes que la création. L’action met à jour uniquement `nom` et `ordre_affichage`, demande le code affecté et ne modifie jamais l’identité ni les timestamps client.
+
+### Result
+
+Un doublon normalisé revient comme erreur du champ `name`; zéro ligne revient comme `not_found`. Un code retourné déclenche `updateTag("prestations")`, le flash `category-edit` et la redirection vers la liste des catégories.
+
+## `deleteServiceCategoryAction(previousState, formData)`
+
+### Preconditions and mutation
+
+Le dialogue client fournit une confirmation explicite mais le serveur réautorise et valide encore `categoryCode`. L’action supprime exactement ce code et demande le code affecté. La clé étrangère `ON DELETE RESTRICT` reste l’arbitre final, même si le compteur affiché indiquait zéro au moment du rendu.
+
+### Result
+
+- violation `23503`: état `conflict` demandant de déplacer ou supprimer les prestations, aucune ligne supprimée ;
+- zéro ligne: `not_found`, aucun succès ;
+- code retourné: invalidation du tag, flash `category-delete`, redirection vers la liste ;
+- aucune cascade, réaffectation implicite ou erreur SQL brute n’est exposée.
 
 ## Pending and duplicate activation
 
@@ -157,6 +181,7 @@ Each client form uses `useActionState` and disables its submit control while pen
 | Missing/revoked/expired session | `session_expired` |
 | Authorization service unavailable | `unavailable` |
 | Mutation returned zero rows | `not_found` |
+| Category still referenced | `conflict` |
 | Network/quota/provider unavailable | `unavailable` |
 | Unknown/constraint drift | `internal` |
 

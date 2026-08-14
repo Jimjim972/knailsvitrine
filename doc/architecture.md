@@ -53,7 +53,7 @@ Il n'est pas prévu d'ouvrir l'inscription au public. L'auto-inscription doit ê
 | `created_at` | `timestamptz` | Départage stable |
 | `updated_at` | `timestamptz` | Date de dernière modification |
 
-La table est lisible publiquement afin de construire le catalogue. Seul l’administrateur courant peut insérer une catégorie ; aucun droit applicatif de modification ou suppression n’est ouvert dans ce périmètre. `prestations.categorie` référence sa clé primaire.
+La table est lisible publiquement afin de construire le catalogue. Seul l’administrateur courant peut insérer, modifier ou supprimer une catégorie. `prestations.categorie` référence sa clé primaire avec `ON UPDATE RESTRICT ON DELETE RESTRICT` : le code reste stable et une catégorie encore utilisée ne peut jamais être supprimée en cascade.
 
 ### Table `prestations`
 
@@ -194,7 +194,7 @@ Les routes Prestations et Galerie administratives ne seront ajoutées à cette s
 
 La catégorie envoyée par le formulaire est revalidée côté serveur par une lecture de `categories_prestations` avant toute insertion ou modification de prestation. La clé étrangère PostgreSQL reste la garantie finale.
 
-### Création d’une catégorie de prestations
+### Cycle de vie d’une catégorie de prestations
 
 1. L’administrateur ouvre `/admin/prestations/categories/nouvelle` depuis la liste ou le formulaire de prestation.
 2. La Server Action revalide la session et le rôle courant, puis normalise le nom et l’ordre avec Zod.
@@ -202,6 +202,8 @@ La catégorie envoyée par le formulaire est revalidée côté serveur par une l
 4. Une unicité insensible à la casse et aux espaces périphériques refuse les doublons.
 5. Après insertion confirmée, le tag `prestations` est invalidé et un succès ponctuel authentifié ramène à la liste.
 6. La catégorie devient sélectionnable immédiatement ; elle n’apparaît sur `/services` que lorsqu’une prestation active lui est associée.
+
+Le renommage et le changement d’ordre suivent la même réautorisation et la même validation, mettent à jour uniquement `nom` et `ordre_affichage`, puis invalident le tag `prestations`. Le code technique n’est jamais modifiable. La suppression demande une confirmation accessible, cible le code validé et retourne un conflit métier expurgé lorsque PostgreSQL signale qu’une prestation référence encore la catégorie. Après déplacement ou suppression de toutes ses prestations, la suppression de la catégorie est confirmée, le cache est invalidé et aucun succès n’est annoncé pour une cible absente.
 
 Les lectures de prix demandent explicitement `prix::text` à PostgREST avant la conversion en centimes, afin qu'aucun nombre JSON flottant ne devienne la source de vérité applicative. Elles conservent aussi le statut de réponse PostgREST : le statut réseau `0`, les annulations/délais et les statuts `429`, `502`, `503` et `504` deviennent une indisponibilité récupérable. Après création, modification ou suppression confirmée, la Server Action émet une preuve HMAC HttpOnly de courte durée, liée à un cookie de garde aléatoire, puis redirige vers la liste. Le Proxy vérifie signature, durée, liaison et registre de consommation avant de transmettre uniquement le type fermé de succès au Server Component. Chaque document `/admin/prestations` efface preuve et garde, puis ajoute l'empreinte du nonce à un registre signé, borné et purgé à expiration. Une altération ou une saturation fait échouer la vérification de façon fermée ; un paramètre d'URL, un cookie littéral ou le rejeu de n'importe quelle preuve encore vivante ne peut donc jamais fabriquer un succès.
 

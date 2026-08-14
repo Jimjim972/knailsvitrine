@@ -8,7 +8,9 @@
 | `/admin/prestations` | current admin | Complete list, statuses and row actions |
 | `/admin/prestations/nouvelle` | current admin | Create form |
 | `/admin/prestations/[id]/modifier` | current admin | Edit form for one service |
+| `/admin/prestations/categories` | current admin | List, rename, reorder and delete categories |
 | `/admin/prestations/categories/nouvelle` | current admin | Create one service category |
+| `/admin/prestations/categories/[code]/modifier` | current admin | Rename/reorder one service category |
 
 `params` and `searchParams` are treated as promises under Next.js 16. No gallery link appears until its own route is functional.
 
@@ -26,11 +28,11 @@ Route `error.tsx` files are Client Error Boundaries with an explicit `"use clien
 ### Header
 
 - Eyebrow/context, `h1` « Prestations », short explanation.
-- Two actions: secondary « Nouvelle catégorie » and primary « Nouvelle prestation », grouped and stacked full-width below 760 px.
+- Three actions: secondary « Catégories », secondary « Nouvelle catégorie » and primary « Nouvelle prestation », grouped and stacked full-width at 768 px and below.
 
 ### Semantic list
 
-One DOM list is styled as rows on desktop and cards at 760 px and below. Every item exposes:
+One DOM list is styled as rows on desktop and cards at 768 px and below. Every item exposes:
 
 - name;
 - current database category label (`categoryLabel`);
@@ -70,13 +72,20 @@ Actions never rely on icon-only labels, color or hover. Long content wraps witho
 - Pending disables the primary control and is announced with `role="status"`.
 - The category select is populated from `categories_prestations`; a text link « Créer une nouvelle catégorie » opens the dedicated form. With no category, the select and submission are disabled and the corrective action remains available.
 
-## Category create form
+## Category management
+
+- La liste expose le nom, le nombre total de prestations, l’ordre et les actions textuelles « Modifier »/« Supprimer ».
+- L’en-tête propose « Retour aux prestations » et « Nouvelle catégorie ».
+- Les états chargement, vide, erreur, succès et session expirée suivent les mêmes composants que la liste de prestations.
+- Le compteur explique le risque mais ne décide pas côté client si la suppression est autorisée.
+
+## Category create/edit form
 
 - Group **Catégorie** with visible fields « Nom » (2–80) and « Ordre d’affichage » (integer >= 0).
 - Preserve both values after validation or recoverable failure and link field errors accessibly.
-- The browser never displays or submits the technical category code.
-- Pending disables « Créer la catégorie » and announces « Création en cours… ».
-- Confirmed success returns to `/admin/prestations` through the authenticated one-use success flash.
+- The browser never displays the technical category code; the edit form submits it only as an opaque hidden target that is revalidated and reauthorized server-side.
+- Pending disables « Créer la catégorie »/« Enregistrer » and announces the matching operation.
+- Confirmed success returns to `/admin/prestations/categories` through the authenticated one-use success flash.
 - Duplicate names after trim/case normalization produce the field error « Une catégorie portant ce nom existe déjà. ».
 
 ### Success navigation
@@ -96,6 +105,8 @@ Mask/reactivate is available from the Server Component list as an explicit text 
 - Initial focus favors cancellation; Escape cancels where supported.
 - Focus returns to the trigger after cancellation and moves to a logical list position after success.
 - No action is submitted until explicit confirmation.
+
+La catégorie utilise le même comportement avec le titre « Supprimer la catégorie ? ». Le corps nomme la catégorie et, lorsque le compteur est non nul, explique que la suppression sera refusée jusqu’au déplacement ou retrait des prestations. Un conflit serveur reste dans le dialogue avec une alerte accessible ; aucune prestation n’est supprimée implicitement.
 
 ## Public services page
 
