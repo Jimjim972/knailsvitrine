@@ -392,3 +392,16 @@ Cette validation correspond à l’incrément initial de création. L’extensio
 Les contrôles locaux de `20260814164809_service_category_management.sql` réussissent : reset complet, 356 assertions pgTAP, lint base sans erreur, advisors Supabase sans nouvel avertissement, drift des types nul, 164 tests unitaires, ESLint, TypeScript et build Next.js 16.3 de production. La matrice Prestations passe 40 scénarios Chromium/WebKit avec 4 scénarios volontairement isolés ; les scénarios d’indisponibilité isolés passent et le scan du build ne trouve aucune valeur Supabase privilégiée. La couverture responsive dédiée passe 6 scénarios sous Chromium/WebKit à 320, 768 et 1 024 px après passage des cartes administratives en colonne à 768 px. L’advisor conserve uniquement l’avertissement historique de politiques SELECT multiples sur `photos_galerie`.
 
 Le parcours automatisé crée une catégorie, refuse son doublon normalisé, conserve son code pendant le renommage et le changement d’ordre, publie une prestation dans la section renommée, refuse la suppression tant que cette prestation existe, puis supprime la prestation et la catégorie vide. Les données temporaires sont absentes à la fin du scénario. SC-016 reste le test utilisateur humain chronométré à réaliser sans aide.
+
+La cible liée a été vérifiée comme le projet Supabase de test `pfucayywhexemzdfwmcs`. Le dry-run ne proposait que `20260814164809_service_category_management.sql`; cette migration a été appliquée, puis l’historique distant a confirmé l’alignement des sept migrations. La production n’a pas été modifiée.
+
+Les commits `fda4cf3` (fonctionnalité/tests) et `8e88e82` (spécifications/documentation) ont été poussés sur `dev`. Le branch deploy Netlify `6a7f4baf6774570008a85cc8` correspondant à `8e88e82` est passé à l’état `completed`/`ready` en 44 secondes. La session administrateur existante sur [`dev--friendly-cactus-227b77.netlify.app`](https://dev--friendly-cactus-227b77.netlify.app) a confirmé sans mutation de contenu hébergé :
+
+- les trois accès « Catégories », « Nouvelle catégorie » et « Nouvelle prestation » depuis la page Prestations ;
+- `/admin/prestations/categories` avec les trois catégories, les compteurs 3/2/4, les ordres 0/1/2 et les actions Modifier/Supprimer ;
+- le formulaire de modification prérempli sans exposition du code, par exemple « Onglerie & Manucure » et ordre 0 ;
+- le dialogue « Supprimer la catégorie ? », l’identification de la cible, l’avertissement pour 3 prestations et l’annulation sans mutation ;
+- le catalogue public intact avec trois sections, neuf cartes et les liens de contact attendus ;
+- zéro erreur ou avertissement console pendant ces contrôles.
+
+Le refus atomique puis la suppression effective ne sont pas rejoués sur les données hébergées pour éviter de modifier un contenu métier réel ; ils sont couverts par pgTAP et par le parcours complet Chromium/WebKit sur la pile Supabase locale. SC-016 reste volontairement non coché car il exige un participant humain non technique et un chronométrage sans aide.

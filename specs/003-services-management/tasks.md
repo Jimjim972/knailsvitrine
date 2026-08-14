@@ -365,6 +365,6 @@ Après Foundational, répartir par frontières de fichiers :
 - [x] T095 Créer la liste `/admin/prestations/categories`, la route de modification, les états loading/error, le formulaire partagé et le dialogue de suppression accessible, puis exposer l’accès « Catégories » depuis Prestations
 - [x] T096 Étendre pgTAP, unitaires et Playwright pour grants/RLS, renommage/ordre, propagation publique, suppression référencée refusée et suppression vide confirmée
 - [x] T097 Exécuter reset, pgTAP complet, lint/advisors Supabase, drift des types, unitaires, ESLint, TypeScript, build et suites Playwright Chromium/WebKit ; corriger tout échec
-- [ ] T098 Vérifier la cible Supabase de test, appliquer uniquement la migration du cycle de vie, commit/push `dev` et attendre le branch deploy Netlify réussi sans toucher la production
-- [ ] T099 Tester sur Netlify `dev` les routes de gestion, le rendu public et les régressions Prestations, puis consigner les résultats et toute limite sans laisser de donnée de test
+- [x] T098 Vérifier la cible Supabase de test, appliquer uniquement la migration du cycle de vie, commit/push `dev` et attendre le branch deploy Netlify réussi sans toucher la production
+- [x] T099 Tester sur Netlify `dev` les routes de gestion, le rendu public et les régressions Prestations, puis consigner les résultats et toute limite sans laisser de donnée de test
 - [ ] T100 Réaliser le test utilisateur SC-016 chronométré sur la preview sans aide
