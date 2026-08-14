@@ -87,7 +87,7 @@
 
 ## Decision 8: liste sémantique responsive et formulaires dédiés
 
-**Decision**: Utiliser une liste sémantique unique rendue en grille sur ordinateur et en cartes sous 760 px. Proposer des routes distinctes pour créer et modifier, des actions textuelles explicites pour masquer/réactiver, et un dialogue de suppression titré qui restaure le focus. La liste reste serveur ; le formulaire de visibilité imbriqué, les formulaires create/edit, le dialogue et les Error Boundaries `error.tsx` imposées par Next.js constituent les frontières clientes. Les catégories partagent code et rang, mais exposent un `adminLabel` en toutes lettres et un `publicLabel` qui préserve exactement les titres éditoriaux existants.
+**Decision**: Utiliser une liste sémantique unique rendue en grille sur ordinateur et en cartes sous 760 px. Proposer des routes distinctes pour créer et modifier, des actions textuelles explicites pour masquer/réactiver, et un dialogue de suppression titré qui restaure le focus. La liste reste serveur ; le formulaire de visibilité imbriqué, les formulaires create/edit, le dialogue et les Error Boundaries `error.tsx` imposées par Next.js constituent les frontières clientes. La décision initiale distinguait `adminLabel`/`publicLabel`; elle est remplacée par la décision 14, où le nom en base devient le libellé commun et les trois visuels initiaux restent indexés par code.
 
 **Rationale**: Cette structure suit `doc/design.md`, évite un tableau horizontal à 320 px et ne duplique pas deux arbres DOM. Les actions restent nommées au clavier et ne reposent ni sur la couleur ni sur une icône.
 
@@ -155,6 +155,18 @@
 - Déclencher une panne avec query string, cookie, en-tête ou Route Handler : rejeté, cela créerait un interrupteur contrôlable par le client et une surface hors MVP.
 - Utiliser uniquement des mocks unitaires : rejeté, ils ne prouvent pas le rendu réel des `error.tsx`, des annonces et du retry dans le build de production.
 - Insérer des noms ou UUID sentinelles en base : rejeté, une donnée métier ne doit jamais activer un comportement de test.
+
+## Decision 14: rendre les catégories créables sans élargir leur cycle de vie
+
+**Decision**: Ajouter `public.categories_prestations` avec un code texte stable généré côté serveur, un nom unique normalisé, un ordre et les timestamps. Reprendre les trois catégories initiales, remplacer le CHECK fermé de `prestations.categorie` par une clé étrangère, autoriser la lecture publique et uniquement l’insertion par l’administrateur courant. Le renommage, la suppression et la personnalisation visuelle restent hors périmètre. Les catégories vides sont omises publiquement ; les nouvelles catégories non vides utilisent un fallback visuel générique.
+
+**Rationale**: La demande exige « Administration → Prestations → Nouvelle catégorie ». Une table dédiée évite toute dérive entre formulaire, DAL et contrainte SQL. Les grants explicites et RLS restent deux barrières distinctes, conformément au changement Data API Supabase courant. Le code serveur empêche le navigateur d’imposer une identité technique ou d’entrer en collision avec les codes initiaux.
+
+**Alternatives considered**:
+
+- Étendre seulement une constante TypeScript : rejeté, cela imposerait toujours un déploiement et ne répondrait pas à l’autonomie administrative.
+- Utiliser le nom comme clé : rejeté, un libellé éditorial ne doit pas devenir une identité relationnelle mutable.
+- Livrer immédiatement rename/delete/visuel : rejeté, périmètre et risques de références orphelines inutiles pour la demande de création.
 
 ## Primary sources
 

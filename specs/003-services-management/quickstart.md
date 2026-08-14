@@ -67,6 +67,8 @@ Avant tout déploiement hébergé futur, exporter les prestations et confirmer q
 
 Après rédaction, ajouter `supabase/tests/database/08_services_management.sql` et inclure ce fichier dans le script pgTAP existant.
 
+L’extension catégories doit être créée séparément par la même procédure CLI (`npx supabase migration new service_categories`). Elle crée `categories_prestations`, reprend les trois codes initiaux, remplace le CHECK de `prestations.categorie` par une clé étrangère, pose grants/RLS et ajoute `supabase/tests/database/10_service_categories.sql` à tous les runners.
+
 ## 3. Rebuild the local database
 
 ```bash
@@ -81,6 +83,7 @@ Résultat attendu :
 
 - toutes les migrations sont appliquées dans l'ordre ;
 - huit prestations initiales et aucune duplication ;
+- trois catégories initiales, la clé étrangère des prestations et les types générés de la nouvelle table ;
 - les types générés restent synchronisés ;
 - aucune clé ou donnée Auth privilégiée n'est écrite dans un fichier ou un rapport.
 
@@ -100,6 +103,7 @@ Attendus :
 - anon et non-admin lisent uniquement les actives ;
 - seul l'admin courant lit les masquées et effectue CRUD ;
 - rôle retiré, session révoquée ou expirée refusés au contrôle suivant ;
+- catégories lisibles publiquement, insertion autorisée au seul admin courant, update/delete refusés à tous les rôles applicatifs ;
 - l'avertissement de politiques permissives multiples n'existe plus pour `prestations` ;
 - l'éventuel avertissement historique de `photos_galerie` est signalé séparément, sans élargir 003.
 
@@ -129,15 +133,15 @@ Le build valide la configuration du client public ; la pile locale et ces variab
 
 Suivre cet ordre afin de garder une bascule vérifiable :
 
-1. ajouter les constantes de catégories, types de prix et tag ;
+1. ajouter les types de catégorie dynamique, les trois présentations initiales, le fallback générique, les types de prix et le tag ;
 2. ajouter validation/normalisation exacte et tests unitaires rouges ;
 3. activer `cacheComponents` et migrer les deux configs admin vers `instant = false` ;
 4. ajouter la DAL admin non cachée et la liste de consultation ;
-5. ajouter les quatre actions puis les routes/composants admin ;
+5. ajouter les quatre actions de prestation et l’action de catégorie, puis les routes/composants admin ;
 6. ajouter le client public anonyme sans cookies et la DAL publique cachée ;
-7. brancher `/services` sur les groupes dynamiques en conservant les trois sections ;
+7. brancher `/services` sur les catégories dynamiques, conserver les trois présentations initiales et omettre les sections vides ;
 8. supprimer les tableaux statiques seulement lorsque le reset local contient les huit lignes ;
-9. vérifier l'intégration croisée des cinq mutations sur une nouvelle consultation publique ;
+9. vérifier l'intégration croisée des cinq mutations de prestation et la création/utilisation d’une catégorie sur une nouvelle consultation publique ;
 10. mettre à jour l'accueil admin, les tests 002 devenus obsolètes et la documentation du prix et du flux.
 
 La lecture publique utilise `use cache`, `cacheLife("days")`, `cacheTag("prestations")`. Le composant de cartes appelle `io()` avant cette lecture et reste sous `Suspense` : le shell contient le chargement, tandis que le résultat partagé reste caché. Les pages admin, lignes masquées, autorisations et clients SSR ne reçoivent aucune directive de cache.
@@ -244,11 +248,11 @@ npm run test:e2e:services:scenarios
 ### Required public path
 
 - les huit prestations migrées correspondent à la baseline ;
-- trois sections, visuels, ordre et liens inchangés ;
+- trois sections initiales, visuels, ordre et liens inchangés ; nouvelles sections actives avec fallback générique ;
 - seuls les éléments actifs sont visibles ;
 - prix fixe, « À partir de » et « Sur devis » corrects ;
 - durée/badge absents sans espace vide ;
-- catégorie vide avec message neutre ;
+- catégorie vide omise du catalogue ;
 - nouvelle consultation publique mise à jour en moins de cinq secondes ;
 - panne de données affiche une indisponibilité, jamais le vieux tableau statique.
 

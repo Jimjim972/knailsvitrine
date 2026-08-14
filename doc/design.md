@@ -264,11 +264,13 @@ Chaque `ServiceSection` comporte :
 
 La grille desktop alterne l'image à gauche ou à droite. Sur mobile, toutes les sections passent en colonne avec l'image avant la liste.
 
-La présentation visuelle des trois catégories reste définie dans le code pour le MVP :
+La présentation visuelle dédiée des trois catégories initiales reste définie dans le code :
 
 - Onglerie & Manucure ;
 - Soins du Corps ;
 - Esthétique & Visage.
+
+Une catégorie créée depuis l’administration réutilise le même composant `ServiceSection`, le nom saisi comme titre et l’univers générique de l’institut (`salon-interior.jpg`, eyebrow « Notre savoir-faire », légende neutre). Elle n’est pas rendue publiquement tant qu’elle ne contient aucune prestation active. L’alternance image/liste est recalculée sur les seules sections effectivement affichées.
 
 ### 8.5 Carte de prestation
 
@@ -494,6 +496,8 @@ La liste galerie affiche au plus 100 photos par page. À partir de la 101e, elle
 - séparer visuellement les actions destructrices ;
 - prévisualiser une image avant l'envoi ;
 - afficher la taille, le format et les dimensions après traitement.
+
+La page Prestations présente deux actions adjacentes : « Nouvelle catégorie » en style secondaire et « Nouvelle prestation » en style principal. Elles passent sur toute la largeur et s’empilent sous 760 px. Le formulaire de catégorie reprend les mêmes champs, erreurs, annonces, état pending et actions Annuler/Créer que les autres formulaires administratifs. Le formulaire de prestation propose un lien textuel « Créer une nouvelle catégorie » sous son sélecteur ; s’il n’existe aucune catégorie, le sélecteur et la soumission restent désactivés avec une consigne explicite.
 
 ### 12.5 États requis
 

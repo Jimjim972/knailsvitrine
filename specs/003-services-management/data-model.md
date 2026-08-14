@@ -2,12 +2,14 @@
 
 ## Existing foundation and migration scope
 
-La fonctionnalité réutilise `public.prestations`. La migration 003 ne crée aucune nouvelle table. Elle doit être créée avec la CLI installée et réaliser, dans cet ordre logique :
+La fonctionnalité réutilise `public.prestations`. La migration initiale 003 a renforcé cette table. L’extension du 2026-08-14 ajoute une migration CLI `service_categories` qui :
 
 1. durcir la représentation et les contraintes de `prix` ;
 2. consolider les politiques `SELECT` de `prestations` sans changer la matrice d'accès ;
 3. insérer les huit prestations statiques avec identifiants et ordres déterministes ;
-4. laisser les politiques de mutation, le trigger `updated_at` et l'index public partiel en place.
+4. laisse les politiques de mutation, le trigger `updated_at` et l'index public partiel en place ;
+5. crée `public.categories_prestations`, y reprend les trois catégories initiales et remplace le CHECK fermé de `prestations.categorie` par une clé étrangère ;
+6. accorde la lecture des catégories à `anon`/`authenticated` et l’insertion au seul administrateur courant sous RLS.
 
 Les types Supabase sont régénérés après la migration même si `numeric` continue d'être représenté par `number` dans le type généré.
 
@@ -18,7 +20,7 @@ Les types Supabase sont régénérés après la migration même si `numeric` con
 | `id` | `uuid` | non nul, UUID généré | Clé primaire et identité stable |
 | `nom` | `text` | non nul | `btrim` entre 2 et 120 caractères |
 | `description` | `text` | non nul | `btrim` entre 1 et 1 000 caractères |
-| `categorie` | `text` | non nul | `onglerie_manucure`, `soins_corps` ou `esthetique_visage` |
+| `categorie` | `text` | non nul | Clé étrangère vers `categories_prestations.code` |
 | `prix` | `numeric` | nullable | Entre `0` et `99999999.99`, au plus deux décimales, absent pour `quote` |
 | `type_prix` | `text` | non nul | `fixed`, `starting_at` ou `quote` |
 | `duree_minutes` | `integer` | nullable | Entre 5 et 600 inclus |
@@ -40,7 +42,7 @@ Les types Supabase sont régénérés après la migration même si `numeric` con
 
 ### Named constraints affected by 003
 
-Conserver les contraintes existantes de nom, description, catégorie, type, couplage prix/type, durée, badge, image et ordre. Remplacer/compléter la contrainte de prix par :
+Conserver les contraintes existantes de nom, description, type, couplage prix/type, durée, badge, image et ordre. La contrainte fermée de catégorie est remplacée par `prestations_categorie_fkey`. Remplacer/compléter la contrainte de prix par :
 
 - `prestations_prix_bounds_check` : prix nul ou compris dans la plage autorisée ;
 - `prestations_prix_scale_check` : prix nul ou échelle inférieure ou égale à deux ;
@@ -84,17 +86,25 @@ Les grants rendent l'opération atteignable ; RLS décide ensuite des lignes.
 
 La politique `SELECT` authenticated reste compatible avec l'UPDATE. Une session retirée ou expirée retombe immédiatement sur la lecture des seules lignes actives et ne peut plus muter.
 
-## Product categories
+## Entity: `public.categories_prestations`
 
-Les catégories ne sont pas une table. Une constante produit unique définit le code, le rang et deux libellés de présentation afin que l'administration reste explicite sans modifier les titres éditoriaux publics :
-
-| Rank | Code | Admin label | Public label |
+| Column | PostgreSQL type | Null/default | Invariant |
 | --- | --- | --- | --- |
-| 0 | `onglerie_manucure` | Onglerie et manucure | Onglerie & Manucure |
-| 1 | `soins_corps` | Soins du corps | Soins du Corps |
-| 2 | `esthetique_visage` | Esthétique et visage | Esthétique & Visage |
+| `code` | `text` | non nul | Clé primaire, regex `^[a-z][a-z0-9_]{1,63}$` |
+| `nom` | `text` | non nul | `btrim` entre 2 et 80 caractères, unique via `lower(btrim(nom))` |
+| `ordre_affichage` | `integer` | non nul, `0` | Supérieur ou égal à zéro |
+| `created_at` | `timestamptz` | non nul, serveur | Départage stable |
+| `updated_at` | `timestamptz` | non nul, serveur | Trigger `private.set_updated_at()` |
 
-Le visuel, l'eyebrow, le titre d'image et la légende restent dans la configuration publique existante. Le rang produit corrige l'écart entre l'ordre visuel et l'ordre lexical des codes.
+Les codes initiaux sont `onglerie_manucure`, `soins_corps` et `esthetique_visage`. Toute nouvelle catégorie reçoit côté serveur un code `category_<uuid-v4-sans-tirets>`. Le formulaire n’accepte jamais ce code comme entrée.
+
+| Role | SELECT | INSERT | UPDATE | DELETE |
+| --- | --- | --- | --- | --- |
+| `anon` | oui | non | non | non |
+| `authenticated` non-admin | oui | refusé par RLS | non accordé | non accordé |
+| administrateur courant | oui | oui | non accordé | non accordé |
+
+L’index `(ordre_affichage, created_at, code)` sert l’ordre stable. Les trois catégories initiales conservent leur présentation dédiée dans le code ; toute autre catégorie utilise le fallback visuel générique.
 
 ## Initial migrated records
 
@@ -116,14 +126,14 @@ Les descriptions sont reprises textuellement depuis la page statique. La migrati
 ## Application model: `ServiceCategory`
 
 ```text
-code: one of the three database category codes
-adminLabel: explicit French label for the list and select
-publicLabel: unchanged editorial title for the public section
-rank: 0 | 1 | 2
-public presentation: existing section image and editorial text
+code: database category primary key
+name: database category label used in admin and public
+displayOrder: non-negative integer
+createdAt / updatedAt: timestamp strings
+public presentation: initial override by code or generic fallback
 ```
 
-Cette configuration est en lecture seule pour l'administrateur.
+La liste est lisible par tous les rôles. L’administration peut ajouter une ligne, mais ne peut pas la renommer ni la supprimer dans ce périmètre.
 
 ## Application model: exact price
 
@@ -164,7 +174,7 @@ quote → fixed/starting_at      ──► amount required before mutation
 | --- | --- | --- |
 | `id` | UUID string | Edit/visibility/delete target |
 | `name`, `description` | string | Form and list data |
-| `category` | category code + `adminLabel` | List and select |
+| `category`, `categoryLabel` | database code + current category name | List and select |
 | `priceType` | `fixed` / `starting_at` / `quote` | Form control |
 | `priceMinorUnits` | safe integer or null | Exact form value |
 | `durationMinutes` | integer or null | Form value |
@@ -208,4 +218,4 @@ Within a category:
 ordre_affichage ASC, created_at ASC, id ASC
 ```
 
-Across categories, use `ServiceCategory.rank`. Duplicate display orders remain valid. Both public and admin DTO mappers must produce the same deterministic order.
+Across categories, use `ServiceCategory.displayOrder`, then `createdAt`, then `code`. Duplicate display orders remain valid. Both public and admin DTO mappers must produce the same deterministic order. Public mapping omits sections whose service list is empty.

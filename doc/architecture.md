@@ -15,7 +15,7 @@ Application Next.js sur Netlify
    |
    v
 Supabase
-   |-- PostgreSQL : prestations et métadonnées des photos
+   |-- PostgreSQL : catégories, prestations et métadonnées des photos
    |-- Auth : connexion de l'administrateur
    `-- Storage : fichiers de la galerie
 ```
@@ -43,6 +43,18 @@ Il n'est pas prévu d'ouvrir l'inscription au public. L'auto-inscription doit ê
 
 ## Modèle de données initial
 
+### Table `categories_prestations`
+
+| Colonne | Type indicatif | Rôle |
+| --- | --- | --- |
+| `code` | `text` | Identifiant technique stable, généré côté serveur |
+| `nom` | `text` | Libellé public et administratif unique |
+| `ordre_affichage` | `integer` | Rang entre catégories |
+| `created_at` | `timestamptz` | Départage stable |
+| `updated_at` | `timestamptz` | Date de dernière modification |
+
+La table est lisible publiquement afin de construire le catalogue. Seul l’administrateur courant peut insérer une catégorie ; aucun droit applicatif de modification ou suppression n’est ouvert dans ce périmètre. `prestations.categorie` référence sa clé primaire.
+
 ### Table `prestations`
 
 | Colonne | Type indicatif | Rôle |
@@ -53,7 +65,7 @@ Il n'est pas prévu d'ouvrir l'inscription au public. L'auto-inscription doit ê
 | `prix` | `numeric` | Prix exact borné à 99 999 999,99 et limité par contrainte à deux décimales pour `fixed` ou `starting_at`, absent pour `quote` |
 | `type_prix` | `text` | `fixed`, `starting_at` ou `quote` |
 | `duree_minutes` | `integer` | Durée indicative |
-| `categorie` | `text` | Groupe de prestations |
+| `categorie` | `text` | Clé étrangère vers le groupe de prestations |
 | `badge` | `text` | Libellé promotionnel facultatif |
 | `image_path` | `text` | Chemin d'une image associée |
 | `ordre_affichage` | `integer` | Position dans la liste |
@@ -90,8 +102,6 @@ Il n'est pas prévu d'ouvrir l'inscription au public. L'auto-inscription doit ê
 | `repair_code` | `text` | Cause fermée parmi `upload_unconfirmed`, `metadata_unconfirmed`, `invalid_object_bytes`, `new_file_cleanup`, `old_file_cleanup`, `object_delete_unconfirmed`, `row_delete_unconfirmed`, `object_missing`, `stale_pending_no_object` et `stale_pending_object_present` |
 | `created_at` | `timestamptz` | Date d'ajout |
 | `updated_at` | `timestamptz` | Date de dernière modification |
-
-Une table de catégories séparée pourra être ajoutée plus tard si les catégories doivent également être administrables.
 
 ## Stockage des fichiers
 
@@ -181,6 +191,17 @@ Les routes Prestations et Galerie administratives ne seront ajoutées à cette s
 3. Les données du formulaire sont validées.
 4. La prestation est créée ou modifiée dans PostgreSQL.
 5. La page publique concernée est actualisée ou revalidée.
+
+La catégorie envoyée par le formulaire est revalidée côté serveur par une lecture de `categories_prestations` avant toute insertion ou modification de prestation. La clé étrangère PostgreSQL reste la garantie finale.
+
+### Création d’une catégorie de prestations
+
+1. L’administrateur ouvre `/admin/prestations/categories/nouvelle` depuis la liste ou le formulaire de prestation.
+2. La Server Action revalide la session et le rôle courant, puis normalise le nom et l’ordre avec Zod.
+3. Le serveur génère un code `category_<uuid-sans-tirets>` et insère la ligne sous RLS ; le navigateur ne choisit jamais le code.
+4. Une unicité insensible à la casse et aux espaces périphériques refuse les doublons.
+5. Après insertion confirmée, le tag `prestations` est invalidé et un succès ponctuel authentifié ramène à la liste.
+6. La catégorie devient sélectionnable immédiatement ; elle n’apparaît sur `/services` que lorsqu’une prestation active lui est associée.
 
 Les lectures de prix demandent explicitement `prix::text` à PostgREST avant la conversion en centimes, afin qu'aucun nombre JSON flottant ne devienne la source de vérité applicative. Elles conservent aussi le statut de réponse PostgREST : le statut réseau `0`, les annulations/délais et les statuts `429`, `502`, `503` et `504` deviennent une indisponibilité récupérable. Après création, modification ou suppression confirmée, la Server Action émet une preuve HMAC HttpOnly de courte durée, liée à un cookie de garde aléatoire, puis redirige vers la liste. Le Proxy vérifie signature, durée, liaison et registre de consommation avant de transmettre uniquement le type fermé de succès au Server Component. Chaque document `/admin/prestations` efface preuve et garde, puis ajoute l'empreinte du nonce à un registre signé, borné et purgé à expiration. Une altération ou une saturation fait échouer la vérification de façon fermée ; un paramètre d'URL, un cookie littéral ou le rejeu de n'importe quelle preuve encore vivante ne peut donc jamais fabriquer un succès.
 

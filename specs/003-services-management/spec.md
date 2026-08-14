@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-10
 
-**Status**: Implemented locally — automated gates complete, manual and hosted preview gates pending
+**Status**: Extended locally on 2026-08-14 — category creation and hosted preview gates pending
 
 **Input**: User description: "003-services-management"
 
@@ -84,7 +84,7 @@ L'administrateur peut supprimer une prestation devenue inutile après une confir
 
 ### User Story 5 - Consulter le catalogue public actualisé (Priority: P5)
 
-Le visiteur consulte les prestations actives réparties dans les trois univers existants. Il voit un prix compréhensible, une durée uniquement lorsqu'elle existe, un badge éventuel et l'action « Réserver » menant toujours vers le contact, sans percevoir le passage d'un catalogue codé en dur à un catalogue administrable.
+Le visiteur consulte les prestations actives réparties dans les catégories enregistrées. Il voit un prix compréhensible, une durée uniquement lorsqu'elle existe, un badge éventuel et l'action « Réserver » menant toujours vers le contact, sans percevoir le passage d'un catalogue codé en dur à un catalogue administrable.
 
 **Why this priority**: L'administration n'apporte de valeur que si les changements sont publiés correctement, sans révéler les contenus masqués ni dégrader le design public existant.
 
@@ -95,10 +95,28 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 1. **Given** des prestations actives et masquées, **When** un visiteur ouvre la page des services, **Then** seules les prestations actives sont affichées dans leur catégorie et leur ordre attendus.
 2. **Given** les trois types de prix, **When** les cartes sont affichées, **Then** un prix fixe apparaît en euros, un prix de départ est précédé de « À partir de » et une prestation sans montant affiche « Sur devis ».
 3. **Given** une prestation sans durée ou sans badge, **When** sa carte est affichée, **Then** aucun libellé vide ni espace incohérent n'est présenté.
-4. **Given** une catégorie sans prestation active, **When** le catalogue est affiché, **Then** la section visuelle de cette catégorie est conservée avec un message neutre indiquant qu'aucune prestation n'y est actuellement disponible.
+4. **Given** une catégorie sans prestation active, **When** le catalogue est affiché, **Then** aucune section vide n'est rendue publiquement.
 5. **Given** une prestation active, **When** le visiteur utilise son action « Réserver », **Then** il est dirigé vers le parcours de contact existant sans promesse de réservation en ligne.
 6. **Given** le catalogue public existant au moment de la bascule, **When** la source administrable devient active, **Then** les huit prestations actuellement publiées conservent leurs noms, descriptions, prix, durées, badges, catégories et ordre relatif sans interruption visible.
 7. **Given** chacune des cinq mutations confirmées — création active, modification, masquage, réactivation et suppression — **When** une nouvelle consultation publique est ouverte, **Then** le nouvel état public attendu est visible en moins de cinq secondes sans déploiement.
+
+---
+
+### User Story 6 - Créer une catégorie de prestations (Priority: P2)
+
+L’administrateur ouvre « Nouvelle catégorie » depuis la gestion des prestations, saisit un nom et un ordre, puis utilise immédiatement cette catégorie dans un formulaire de prestation.
+
+**Why this priority**: Une liste de trois catégories figées empêche l’institut d’ajouter un nouvel univers de soins sans intervention technique.
+
+**Independent Test**: Créer une catégorie, vérifier le succès authentifié et sa présence unique dans le sélecteur de prestation, créer une prestation active dans cette catégorie, puis vérifier sa section publique avec le visuel générique.
+
+**Acceptance Scenarios**:
+
+1. **Given** un administrateur courant, **When** il crée une catégorie avec un nom de 2 à 80 caractères et un ordre positif ou nul, **Then** une seule catégorie est persistée et un succès réel est annoncé.
+2. **Given** une catégorie existante, **When** le même nom est soumis avec une casse ou des espaces périphériques différents, **Then** la création est refusée sur le champ Nom sans mutation supplémentaire.
+3. **Given** une catégorie créée, **When** le formulaire de nouvelle prestation est ouvert, **Then** la catégorie est proposée une seule fois dans l’ordre configuré.
+4. **Given** une catégorie vide, **When** le catalogue public est consulté, **Then** elle n’est pas affichée ; dès qu’une prestation active lui est liée, elle apparaît avec le visuel générique de l’institut.
+5. **Given** un visiteur, un non-admin ou une ancienne session révoquée, **When** une insertion directe est tentée, **Then** elle est refusée par les droits et RLS.
 
 ### Edge Cases
 
@@ -115,6 +133,9 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 - Une panne de lecture publique affiche un état indisponible compréhensible et ne remplace pas silencieusement les données par l'ancien catalogue codé en dur.
 - Un visiteur, un compte non administrateur ou une ancienne session révoquée qui appelle directement une opération de gestion ne peut ni lire les prestations masquées ni créer, modifier, masquer, réactiver ou supprimer une prestation.
 - Les contenus longs et les montants importants doivent revenir à la ligne sans masquer le statut ou les actions à 320 px.
+- Un nom de catégorie de 2 ou 80 caractères est accepté ; un nom vide, trop court, trop long ou déjà présent après normalisation est refusé.
+- Un code de catégorie est généré côté serveur sous la forme `category_<32 caractères hexadécimaux>` et n'est jamais accepté depuis le formulaire.
+- Une catégorie supprimée ou inconnue entre l’ouverture du formulaire et sa soumission produit une erreur de catégorie sans créer ni modifier la prestation.
 
 ## Requirements *(mandatory)*
 
@@ -126,7 +147,7 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 - **FR-004**: Le système MUST fournir des états distincts pour le chargement initial, la liste vide, les données chargées, l'indisponibilité récupérable et la session expirée ; un échec de lecture ne MUST pas être présenté comme une liste vide.
 - **FR-005**: Le système MUST permettre de créer et modifier une prestation avec les champs administrables suivants : nom, description, catégorie, type de prix, montant conditionnel, durée facultative, badge facultatif, ordre d'affichage et statut actif ou masqué.
 - **FR-006**: Le nom MUST contenir de 2 à 120 caractères et la description de 1 à 1 000 caractères après suppression des espaces périphériques ; les valeurs obligatoires composées seulement d'espaces MUST être refusées.
-- **FR-007**: Dans l'administration, la catégorie MUST être choisie dans la liste fermée « Onglerie et manucure », « Soins du corps » ou « Esthétique et visage » ; ces libellés administratifs correspondent aux trois catégories produit sans remplacer leurs intitulés publics existants, et cette fonctionnalité MUST NOT permettre de créer, renommer, réordonner ou supprimer une catégorie.
+- **FR-007**: Dans l'administration, la catégorie d’une prestation MUST être choisie parmi les catégories lues depuis `categories_prestations`, et le serveur MUST vérifier qu’elle existe encore avant chaque création ou modification de prestation.
 - **FR-008**: Le type de prix MUST être « Prix fixe », « À partir de » ou « Sur devis ». « Prix fixe » et « À partir de » MUST exiger un montant de 0 à 99 999 999,99 euros avec au plus deux décimales ; « Sur devis » MUST interdire tout montant enregistré.
 - **FR-009**: La saisie d'un montant MUST accepter la virgule ou le point comme séparateur décimal, MUST rejeter les valeurs ambiguës ou comportant plus de deux décimales et MUST conserver une valeur décimale exacte jusqu'à sa restitution.
 - **FR-010**: La durée MUST être facultative et, lorsqu'elle est renseignée, MUST être exprimée en minutes entières entre 5 et 600 incluses.
@@ -139,10 +160,10 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 - **FR-017**: Le système MUST permettre de masquer une prestation sans la supprimer, de réactiver une prestation masquée et de conserver les prestations masquées dans la liste administrative.
 - **FR-018**: Toute suppression MUST être précédée d'une confirmation accessible identifiant la prestation par son nom et indiquant le caractère définitif de l'opération ; l'annulation MUST conserver l'élément sans annoncer de succès.
 - **FR-019**: Après une création, modification, activation, masquage ou suppression confirmée, l'administration et le catalogue public MUST refléter le nouvel état sans nouveau déploiement ; un échec MUST conserver un état récupérable et ne MUST jamais annoncer un faux succès.
-- **FR-020**: Le catalogue public MUST afficher uniquement les prestations actives, regroupées dans les trois catégories fixes et ordonnées par ordre d'affichage croissant, date de création croissante puis départage stable.
+- **FR-020**: Le catalogue public MUST afficher uniquement les prestations actives, regroupées selon les catégories enregistrées et ordonnées par ordre de catégorie, puis ordre de prestation, date de création et identifiant stables.
 - **FR-021**: Le catalogue public MUST présenter le nom, la description, le type de prix et son montant éventuel, la durée éventuelle et le badge éventuel de chaque prestation, sans espace réservé aux valeurs absentes.
 - **FR-022**: Les prix publics MUST être formatés en euros selon le contexte français : un montant entier n'affiche pas de décimales (`45 €`), un montant comportant des centimes affiche exactement deux décimales séparées par une virgule (`45,50 €`), un prix de départ ajoute le préfixe « À partir de » (`À partir de 45,50 €`) et un devis affiche uniquement « Sur devis » sans montant.
-- **FR-023**: Chaque catégorie publique MUST conserver sa section, son intitulé, son univers photographique et son ordre actuels ; une catégorie sans prestation active MUST afficher un message neutre plutôt qu'une donnée factice.
+- **FR-023**: Les trois catégories initiales MUST conserver leur intitulé et leur univers photographique dédiés ; toute catégorie ajoutée MUST utiliser le visuel générique documenté et une catégorie sans prestation active MUST être omise du catalogue public.
 - **FR-024**: L'action publique « Réserver » de chaque prestation MUST conserver sa destination vers le parcours de contact existant et MUST NOT introduire de réservation en ligne.
 - **FR-025**: La mise en service de la source administrable MUST reprendre les huit prestations actuellement publiées avec leurs noms, descriptions, prix, durées, badges, catégories et ordre relatif, puis supprimer leur duplication comme contenu métier codé en dur.
 - **FR-026**: Les interfaces administratives de la fonctionnalité MUST rester utilisables à 320 px, 768 px et 1 024 px, au clavier et au toucher, avec des libellés visibles, un focus contrasté, des cibles d'au moins 44 × 44 px, des erreurs reliées aux champs et des annonces de statut accessibles.
@@ -150,6 +171,10 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 - **FR-028**: Les erreurs visibles MUST distinguer au minimum validation, session expirée ou refus d'accès, indisponibilité réseau ou service, et erreur interne, sans exposer de requête, trace, secret, jeton, cookie ni détail d'infrastructure.
 - **FR-029**: Les pages administratives et leurs données MUST rester privées, non réutilisables entre utilisateurs et non restituables après une perte d'autorisation ; aucune prestation masquée ni commande administrative active ne MUST être présentée à un autre utilisateur.
 - **FR-030**: La gestion des prestations MUST supporter le volume initial d'environ 40 éléments sans imposer de pagination et MUST préserver un ordre stable lors des actualisations successives.
+- **FR-031**: Le système MUST permettre à l’administrateur courant de créer une catégorie avec un nom normalisé de 2 à 80 caractères et un ordre entier de 0 à 2 147 483 647 ; le code technique MUST être généré exclusivement côté serveur.
+- **FR-032**: Le nom d’une catégorie MUST être unique sans tenir compte de la casse ni des espaces périphériques, et un doublon MUST produire une erreur de champ sans faux succès.
+- **FR-033**: Les catégories MUST être lisibles par `anon` et `authenticated`; seul l’administrateur courant MUST pouvoir insérer, tandis que la modification et la suppression MUST rester refusées dans ce périmètre.
+- **FR-034**: Après une création confirmée, le tag `prestations` MUST être invalidé, la catégorie MUST être immédiatement disponible dans les formulaires et sa section publique MUST apparaître en moins de cinq secondes dès qu’elle contient une prestation active.
 
 ### Scope Boundaries
 
@@ -161,12 +186,13 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 - validation complète des champs et formats de prix ;
 - états chargement, vide, attente, succès, erreur, session expirée et confirmation de suppression ;
 - remplacement des prestations codées en dur par le catalogue administrable, avec reprise des huit contenus existants ;
-- lecture publique des prestations actives, regroupement dans les trois catégories fixes et actualisation sans déploiement ;
+- lecture publique des prestations actives, regroupement dans les catégories administrables et actualisation sans déploiement ;
+- création unitaire d’une catégorie avec nom et ordre, puis utilisation immédiate dans une prestation ;
 - maintien du design, du responsive, de l'accessibilité et du parcours de contact existants.
 
 **Excluded**:
 
-- création, modification, suppression ou réorganisation des catégories et de leurs visuels ;
+- renommage, modification d’ordre après création, suppression ou personnalisation visuelle des catégories ;
 - ajout ou gestion d'une image propre à chaque prestation ;
 - import générique par fichier, export, opérations groupées et historique complet des modifications ;
 - recherche, filtrage avancé et pagination, non nécessaires au volume du MVP ;
@@ -176,8 +202,8 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 
 ### Key Entities *(include if feature involves data)*
 
-- **Prestation**: Offre commerciale administrable caractérisée par un identifiant stable, un nom, une description, une catégorie fermée, une présentation de prix, un montant conditionnel, une durée facultative, un badge facultatif, un ordre, une visibilité et des dates de création et de modification.
-- **Catégorie de prestation**: Un des trois univers fixes du catalogue. Elle détermine le regroupement public et son univers visuel, mais n'est pas administrable dans cette fonctionnalité.
+- **Prestation**: Offre commerciale administrable caractérisée par un identifiant stable, un nom, une description, une référence à une catégorie enregistrée, une présentation de prix, un montant conditionnel, une durée facultative, un badge facultatif, un ordre, une visibilité et des dates de création et de modification.
+- **Catégorie de prestation**: Groupe administrable à la création, caractérisé par un code serveur stable, un nom unique, un ordre et des dates. Les trois catégories initiales ont un visuel dédié ; les nouvelles utilisent le visuel générique.
 - **Présentation de prix**: Règle liant le type commercial au montant : prix fixe et prix de départ exigent un montant exact, tandis que « Sur devis » exclut tout montant.
 - **État de visibilité**: État actif ou masqué d'une prestation. Il contrôle sa présence publique sans empêcher sa consultation et sa réactivation par l'administrateur.
 - **État de formulaire**: Résultat récupérable d'une création, modification ou suppression comprenant l'attente, les erreurs de champs, le refus d'accès, l'indisponibilité ou le succès confirmé.
@@ -198,13 +224,15 @@ Le visiteur consulte les prestations actives réparties dans les trois univers e
 - **SC-010**: Lors d'un test utilisateur guidé standardisé, un utilisateur cible non technique part du même jeu initial et reçoit successivement cinq consignes — retrouver une prestation masquée, créer une prestation, modifier son prix, la masquer puis la supprimer. Au moins 4 tâches sur 5 sont accomplies chacune lors d'une première tentative ininterrompue, sans indice de l'observateur ni redémarrage de la tâche, et aucune action destructive n'est déclenchée sans confirmation explicite.
 - **SC-011**: Après la fonctionnalité, les pages publiques `/`, `/services`, `/galerie` et `/contact` conservent leurs adresses, leur navigation, leurs titres et textes hors données de prestations, leurs destinations de liens, leur ordre de sections et l'absence de débordement horizontal aux largeurs 320 px, 768 px et 1 024 px.
 - **SC-012**: Les contrôles des messages utilisateur et sorties partageables trouvent 0 secret, jeton, cookie, trace, requête brute, détail d'infrastructure ou donnée de session.
+- **SC-013**: Dans 100 % d’une matrice comprenant création valide, limites 2/80 caractères, ordre 0/maximal, doublon casse/espaces et tentative non-admin, seule la création valide autorisée persiste une catégorie.
+- **SC-014**: Un utilisateur cible non technique crée une catégorie, la sélectionne pour une prestation et retrouve la prestation dans la nouvelle section publique en moins de 3 minutes, sans aide ni modification de code.
 
 ## Assumptions
 
 - Les fonctionnalités `001-supabase-foundation` et `002-admin-authentication` sont disponibles et fournissent respectivement le catalogue persistant avec ses règles d'accès et l'espace administrateur protégé.
 - Le MVP utilise un seul niveau de droit administrateur et un faible volume d'environ 40 prestations ; aucune collaboration simultanée ni résolution avancée de conflits n'est nécessaire.
 - En cas de modifications concurrentes exceptionnelles, la dernière mutation confirmée devient l'état courant ; une cible disparue ou devenue indisponible produit un message récupérable plutôt qu'un faux succès.
-- Les trois catégories, leur ordre, leurs intitulés et leurs photographies restent configurés par le produit et ne sont pas des contenus administrables.
+- Les trois catégories initiales conservent leurs photographies configurées par le produit. Le nom et l’ordre des nouvelles catégories sont administrables à la création ; leur visuel utilise le fallback générique.
 - Tous les prix sont exprimés en euros et saisis en contexte français ; aucune taxe, remise, devise secondaire ou calcul de total ne fait partie de la fonctionnalité.
 - Le champ d'image associé à une prestation reste inutilisé dans ce périmètre ; les visuels publics demeurent ceux des catégories existantes.
 - L'action « Réserver » conserve son sens actuel de prise de contact et n'ouvre pas un système de réservation.

@@ -90,14 +90,14 @@ Il n'existe aucun écran public permettant de créer un compte administrateur.
 | ID | Besoin |
 | --- | --- |
 | `PRE-PUB-01` | Afficher uniquement les prestations dont le statut est actif. |
-| `PRE-PUB-02` | Regrouper les prestations selon les catégories existantes : onglerie et manucure, soins du corps, esthétique et visage. |
+| `PRE-PUB-02` | Regrouper les prestations selon les catégories enregistrées, dans leur ordre d’affichage. |
 | `PRE-PUB-03` | Respecter l'ordre d'affichage choisi dans l'administration. |
 | `PRE-PUB-04` | Afficher au minimum le nom, la description, le prix et la durée. |
 | `PRE-PUB-05` | Pouvoir afficher un badge facultatif, par exemple « Populaire » ou « Nouveau ». |
 | `PRE-PUB-06` | Gérer les cas « prix fixe », « à partir de » et « sur devis ». |
 | `PRE-PUB-07` | Une modification validée dans l'administration doit être visible sur le site sans nouveau déploiement. |
 
-Les trois catégories et leur présentation visuelle restent configurées dans le code pour la première version. Une table de catégories ne sera nécessaire que si l'administrateur doit ensuite créer ou modifier les catégories elles-mêmes.
+Les trois catégories initiales conservent leur présentation visuelle dédiée. Une catégorie créée dans l’administration reçoit l’univers visuel générique de l’institut et ne devient publique qu’à partir du moment où elle contient au moins une prestation active.
 
 ### 7.2 Administration des prestations
 
@@ -111,6 +111,8 @@ Les trois catégories et leur présentation visuelle restent configurées dans l
 | `PRE-ADM-06` | Modifier l'ordre d'affichage avec une valeur numérique simple dans la première version. |
 | `PRE-ADM-07` | Afficher des messages clairs en cas de réussite, de validation invalide ou d'erreur serveur. |
 | `PRE-ADM-08` | Empêcher les doubles soumissions pendant une opération en cours. |
+| `PRE-ADM-09` | Créer une nouvelle catégorie depuis la gestion des prestations avec un nom et un ordre d’affichage. |
+| `PRE-ADM-10` | Proposer immédiatement toutes les catégories enregistrées dans les formulaires de création et de modification d’une prestation. |
 
 ### 7.3 Galerie publique
 
@@ -176,7 +178,11 @@ Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remp
 
 - le nom est obligatoire et contient entre 2 et 120 caractères ;
 - la description est obligatoire et contient au maximum 1 000 caractères ;
-- la catégorie appartient à une liste fermée définie dans l'application ;
+- la catégorie d’une prestation doit référencer une catégorie enregistrée ;
+- le nom d’une catégorie est obligatoire, contient entre 2 et 80 caractères et reste unique sans tenir compte de la casse ni des espaces périphériques ;
+- le code technique d’une nouvelle catégorie est généré côté serveur et n’est jamais fourni par le navigateur ;
+- l’ordre d’une catégorie est un entier positif ou nul ; les égalités sont départagées par date de création puis par code ;
+- la création de catégorie est incluse dans le MVP, mais son renommage, sa suppression et la gestion de son propre visuel restent hors périmètre ;
 - le prix est positif ou nul lorsqu'il est renseigné ;
 - le type de prix vaut `fixed`, `starting_at` ou `quote` ;
 - `fixed` et `starting_at` exigent un prix renseigné ; `quote` exige un prix absent ;
@@ -324,7 +330,7 @@ Les images déjà compressées sont rendues avec `next/image` sans transformatio
 | `id` | `uuid` | Clé primaire, valeur générée par défaut |
 | `nom` | `text` | Obligatoire, longueur contrôlée |
 | `description` | `text` | Obligatoire |
-| `categorie` | `text` | Obligatoire, valeur contrôlée |
+| `categorie` | `text` | Obligatoire, clé étrangère vers `categories_prestations.code` |
 | `prix` | `numeric` | Facultatif, de 0 à 99 999 999,99 avec au plus deux décimales ; les valeurs plus précises sont refusées sans arrondi |
 | `type_prix` | `text` | Obligatoire, `fixed`, `starting_at` ou `quote` |
 | `duree_minutes` | `integer` | Facultatif, valeur positive |
@@ -340,7 +346,19 @@ Index recommandés :
 - index partiel `prestations_public_category_order_idx` sur `(categorie, ordre_affichage, created_at, id)` lorsque `actif = true` ;
 - aucun index d'administration supplémentaire avant qu'une mesure réelle ne le justifie au volume du MVP.
 
-### 10.2 Table `photos_galerie`
+### 10.2 Table `categories_prestations`
+
+| Colonne | Type PostgreSQL | Contraintes |
+| --- | --- | --- |
+| `code` | `text` | Clé primaire, code technique fermé généré côté serveur pour toute nouvelle catégorie |
+| `nom` | `text` | Obligatoire, 2 à 80 caractères, unique après normalisation casse/espaces |
+| `ordre_affichage` | `integer` | Obligatoire, zéro par défaut, positif ou nul |
+| `created_at` | `timestamptz` | Obligatoire, date serveur par défaut |
+| `updated_at` | `timestamptz` | Obligatoire, mis à jour lors des modifications |
+
+Les rôles `anon` et `authenticated` peuvent lire les catégories. Seul l’administrateur courant peut en créer une. Les droits de modification et de suppression ne sont pas accordés dans ce périmètre.
+
+### 10.3 Table `photos_galerie`
 
 | Colonne | Type PostgreSQL | Contraintes |
 | --- | --- | --- |
@@ -391,6 +409,9 @@ Index partiel `photos_galerie_public_variant_order_idx` sur `(variante_affichage
 | Prestations actives | Lecture | Lecture | Lecture |
 | Prestations inactives | Aucun accès | Aucun accès | Lecture |
 | Création/modification/suppression de prestations | Refusé | Refusé | Autorisé |
+| Lecture des catégories de prestations | Lecture | Lecture | Lecture |
+| Création d’une catégorie de prestations | Refusé | Refusé | Autorisé |
+| Modification/suppression d’une catégorie de prestations | Refusé | Refusé | Refusé dans ce périmètre |
 | Métadonnées des photos actives et cohérentes (`actif=true AND file_state='ready'`) | Lecture | Lecture | Lecture |
 | Octets des photos actives et cohérentes | Lecture réautorisée | Lecture réautorisée | Lecture |
 | Octets des photos inactives, non `ready` ou supprimées, même via une URL applicative connue | Refusé | Refusé | Selon état administratif courant |
@@ -552,7 +573,9 @@ La fondation Supabase vérifie séparément les droits de suppression de la lign
 
 ### 15.3 Vérifications fonctionnelles
 
-- affichage correct des trois catégories ;
+- affichage correct des trois catégories initiales et de toute nouvelle catégorie contenant une prestation active ;
+- absence publique d’une catégorie vide ou ne contenant que des prestations masquées ;
+- création administrative d’une catégorie valide, refus d’un doublon casse/espaces et disponibilité immédiate dans le formulaire de prestation ;
 - ordre des prestations conforme à l'administration ;
 - formats de prix corrects ;
 - badge facultatif correctement affiché ;
@@ -575,7 +598,7 @@ La fonctionnalité est considérée comme terminée lorsque :
 1. les prestations codées en dur ont été remplacées par les données Supabase ;
 2. les photos administrables sont stockées dans Supabase Storage ;
 3. le design public existant est conservé, avec zéro décalage de mise en page attribuable aux images dans le scénario automatisé et les seuils colorimétriques définis en 15.3 ;
-4. l'administrateur peut gérer les prestations et les photos depuis `/admin` ;
+4. l'administrateur peut gérer les prestations et les photos depuis `/admin`, et créer les catégories nécessaires aux prestations ;
 5. un visiteur ou un utilisateur non-admin ne peut effectuer aucune mutation ;
 6. RLS et les politiques Storage ont été testées ;
 7. les images sont validées côté navigateur puis leurs octets finaux sont revalidés côté serveur, compressés à 1 Mio maximum et accompagnés de leurs métadonnées ;

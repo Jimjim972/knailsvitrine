@@ -20,7 +20,7 @@ Une interface masquée, un layout protégé, une confirmation côté client ou u
 | --- | --- | --- | --- |
 | `name` | required | required | trim, 2–120 |
 | `description` | required | required | trim, 1–1 000 |
-| `category` | required | required | closed product code |
+| `category` | required | required | normalized code, then existence rechecked server-side |
 | `priceType` | required | required | `fixed`, `starting_at`, `quote` |
 | `price` | conditional | conditional | comma/point → canonical decimal → cents |
 | `durationMinutes` | optional | optional | empty → null, integer 5–600 |
@@ -29,6 +29,8 @@ Une interface masquée, un layout protégé, une confirmation côté client ou u
 | `active` | default true | required | explicit boolean |
 
 For `quote`, the payload always sets price to null even if a stale browser field contains a value. For tariffed types, missing or invalid price is a validation error.
+
+Before a service insert or update, the action reads the submitted code from `categories_prestations` under the current session. A missing category returns a field error and performs no service mutation; the PostgreSQL foreign key is the final integrity control.
 
 ## State union
 
@@ -126,6 +128,22 @@ The row no longer appears in admin or public reads; tag expired; success announc
 - User cancellation: action not invoked.
 - Zero rows: `not_found`, no success.
 - Network/authorization/internal: element remains presented until a fresh read proves otherwise.
+
+## `createServiceCategoryAction(previousState, formData)`
+
+### Input and validation
+
+- `name`: required, trimmed, 2–80 characters;
+- `displayOrder`: integer from 0 to 2 147 483 647;
+- no client-provided code, timestamps or presentation fields.
+
+### Mutation
+
+After `requireAdminAction()`, generate `category_<uuid-v4-without-hyphens>` on the server and insert only `code`, `nom` and `ordre_affichage` into `categories_prestations`. RLS repeats the current-admin decision. The unique index on `lower(btrim(nom))` is mapped to a safe `name` field error.
+
+### Success and failure
+
+Exactly one returned code confirms success, then `updateTag("prestations")` runs and the authenticated one-use `category-create` flash redirects to `/admin/prestations`. Validation, revoked session, non-admin access, duplicate name, network failure or missing returned row never announces success and never exposes provider details.
 
 ## Pending and duplicate activation
 

@@ -8,6 +8,7 @@
 | `/admin/prestations` | current admin | Complete list, statuses and row actions |
 | `/admin/prestations/nouvelle` | current admin | Create form |
 | `/admin/prestations/[id]/modifier` | current admin | Edit form for one service |
+| `/admin/prestations/categories/nouvelle` | current admin | Create one service category |
 
 `params` and `searchParams` are treated as promises under Next.js 16. No gallery link appears until its own route is functional.
 
@@ -25,14 +26,14 @@ Route `error.tsx` files are Client Error Boundaries with an explicit `"use clien
 ### Header
 
 - Eyebrow/context, `h1` « Prestations », short explanation.
-- One dominant primary CTA: « Nouvelle prestation ».
+- Two actions: secondary « Nouvelle catégorie » and primary « Nouvelle prestation », grouped and stacked full-width below 760 px.
 
 ### Semantic list
 
 One DOM list is styled as rows on desktop and cards at 760 px and below. Every item exposes:
 
 - name;
-- administrative category label (`adminLabel`);
+- current database category label (`categoryLabel`);
 - display order;
 - optional badge;
 - text status « Active » or « Masquée »;
@@ -67,6 +68,16 @@ Actions never rely on icon-only labels, color or hover. Long content wraps witho
 - Price field shown/required for fixed/starting-at, cleared and disabled for quote.
 - Primary save action last; secondary cancel returns to list.
 - Pending disables the primary control and is announced with `role="status"`.
+- The category select is populated from `categories_prestations`; a text link « Créer une nouvelle catégorie » opens the dedicated form. With no category, the select and submission are disabled and the corrective action remains available.
+
+## Category create form
+
+- Group **Catégorie** with visible fields « Nom » (2–80) and « Ordre d’affichage » (integer >= 0).
+- Preserve both values after validation or recoverable failure and link field errors accessibly.
+- The browser never displays or submits the technical category code.
+- Pending disables « Créer la catégorie » and announces « Création en cours… ».
+- Confirmed success returns to `/admin/prestations` through the authenticated one-use success flash.
+- Duplicate names after trim/case normalization produce the field error « Une catégorie portant ce nom existe déjà. ».
 
 ### Success navigation
 
@@ -88,12 +99,12 @@ Mask/reactivate is available from the Server Component list as an explicit text 
 
 ## Public services page
 
-- Keep `PageHeading`, the three `ServiceSection` calls, their order, images, captions, reverse layout and eager first image.
-- Replace only each section's service array with grouped `PublicService` data.
+- Keep `PageHeading` and render one `ServiceSection` per non-empty database category.
+- Preserve the three initial images/captions exactly; use the documented generic institute presentation for new category codes.
 - Render optional duration/badge without placeholder.
-- Preserve the public category titles from `publicLabel`, distinct from the administrative labels.
+- Use the category database name as both public and administrative label.
 - Render canonical price labels from the domain formatter: `45 €`, `45,50 €`, « À partir de 45,50 € » and « Sur devis ».
-- For an empty category, retain its section and show a neutral unavailable message.
+- Omit an empty category instead of rendering a public placeholder section.
 - Keep each « Réserver » link targeting `/contact`.
 - Add public loading/error states without restoring static service content.
 
@@ -113,5 +124,5 @@ Mask/reactivate is available from the Server Component list as an explicit text 
 - No new color family, font or breakpoint.
 - No dark mode, drag-and-drop ordering or icon-only action.
 - No public Header/Footer inside admin routes.
-- No modification of public category photography or editorial text.
+- No modification of the three initial category photographs or editorial text; new categories use only the generic fallback.
 - No false Gallery navigation, booking UI or image upload.

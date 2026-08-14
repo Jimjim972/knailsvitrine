@@ -15,6 +15,10 @@
 | current admin | All rows + CRUD |
 | removed role / revoked or expired session | Hidden reads and mutations refused on next control |
 | Database lint/advisors | No new warning; prestation duplicate-policy warning removed |
+| Three category seeds | Exact codes, names and orders; service FK intact |
+| Category bounds and duplicate name | 2/80 and orders 0/max accepted; invalid/duplicate normalized names rejected |
+| Category anon/non-admin | Read allowed; insert/update/delete refused |
+| Category current admin | Read and insert allowed; update/delete remain refused |
 
 ## Pure unit contracts
 
@@ -59,7 +63,9 @@ Supplementary tests, outside the fixed count, cover a non-integer duration, a mi
 - Canonical labels: `45 €`, `45,50 €`, « À partir de 45,50 € » and « Sur devis ».
 - Quote clears a stale amount.
 - Optional duration/badge map to null and render no placeholder.
-- Category rank and deterministic tie ordering.
+- Category database order and deterministic date/code tie ordering.
+- Dynamic category mapping, generic presentation fallback and empty public-section omission.
+- Category form bounds and generated-code pattern.
 - Every action pipeline stops before mutation on authorization/validation failure.
 - Zero-row updates/deletes become `not_found`.
 - PostgREST response statuses `0`, `429`, `502`, `503`, `504` and abort/timeout shapes become `unavailable` at read and mutation boundaries.
@@ -98,6 +104,7 @@ Supplementary tests, outside the fixed count, cover a non-integer duration, a mi
 - Cancel delete, then confirm; only the target disappears.
 - Delete target out-of-band locally before confirmation and verify no false success.
 - Consume create success, consume delete success, then replay the first proof and verify no success appears.
+- Create a category, reject its normalized duplicate, verify one dynamic select option, create a service in it and observe the generic public section.
 
 ### Cross-story public projection
 
@@ -108,10 +115,10 @@ Supplementary tests, outside the fixed count, cover a non-integer duration, a mi
 ### Public catalogue
 
 - Eight migrated cards initially match the static baseline.
-- Three section headings, order, images, captions and CTA destinations unchanged.
+- Three initial section headings, order, images, captions and CTA destinations unchanged.
 - Three price presentations correct.
 - Missing duration/badge leaves no empty label.
-- Empty category retains section with neutral message.
+- Empty category is omitted; a new non-empty category uses the generic institute presentation.
 - Forty-row dataset remains stable over 20 refreshes.
 - Data failure shows error, not empty state or static fallback.
 
@@ -165,5 +172,6 @@ No hosted migration, seed or deploy is authorized merely by this contract.
 - Firefox current smoke.
 - Available assistive technology for labels, errors, pending and dialog.
 - Timed non-technical create-to-public flow under two minutes.
+- Timed non-technical category-create-to-public-service flow under three minutes.
 - Standardized SC-010 session from the same clean fixture: give the five prompts one at a time, provide no hint or restart, record first-attempt success/failure for each prompt, require at least 4/5 successes, and record that deletion occurred only after explicit confirmation.
 - Visual comparison against `doc/design.md` and public baseline.

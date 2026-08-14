@@ -14,11 +14,12 @@ Définir deux lectures séparées : un catalogue public partageable limité aux 
 
 ### Query contract
 
-- Table : `public.prestations`.
+- Tables : `public.categories_prestations` et `public.prestations`, lues en parallèle.
+- Colonnes catégorie explicites : `code`, `nom`, `ordre_affichage`, `created_at`, `updated_at`.
 - Colonnes explicites : `id`, `nom`, `description`, `categorie`, `prix::text`, `type_prix`, `duree_minutes`, `badge`, `ordre_affichage`, `created_at`.
 - Filtre explicite : `actif = true`.
 - Tri SQL : `categorie`, `ordre_affichage`, `created_at`, `id` croissants.
-- Tri final : rang produit de catégorie, puis ordre/date/ID.
+- Tri final : ordre/date/code de catégorie, puis ordre/date/ID de prestation.
 - Maximum attendu : environ 40 lignes, sans pagination.
 
 ### Cache contract
@@ -33,7 +34,7 @@ La fonction ne doit appeler, directement ou indirectement, ni `cookies()`, ni `h
 
 ### Output
 
-`PublicService[]`, groupable par les trois catégories fixes. Le composant reçoit des libellés déjà formatés et jamais une ligne brute.
+`PublicServiceSection[]`, chaque section contenant son DTO `ServiceCategory` et ses `PublicService`. Les sections vides sont retirées au rendu public. Le composant reçoit des libellés déjà formatés et jamais une ligne brute.
 
 ### Failure
 
@@ -82,9 +83,17 @@ Même sélection que l'admin list, filtrée par `id`, résultat au plus un.
 - Zéro ligne : état introuvable sûr, sans révéler si la cible existe hors autorisation.
 - Erreur : indisponibilité récupérable avec corrélation.
 
+## Admin category read: `getAdminServiceCategories()`
+
+- Garde `requireAdminPage()` exécutée par la page appelante.
+- Client SSR courant, aucun cache partagé.
+- Colonnes explicites `code`, `nom`, `ordre_affichage`, `created_at`, `updated_at`.
+- Ordre `ordre_affichage`, `created_at`, `code`.
+- La liste alimente les formulaires ; une réponse vide est valide et désactive la création/modification de prestation.
+
 ## Category grouping
 
-Le mapper initialise toujours les trois groupes dans l'ordre produit. Une catégorie sans ligne active conserve un tableau vide afin que la page rende sa section et son message neutre.
+Le mapper initialise un groupe par catégorie lue en base, selon l’ordre de catégorie. Les services dont la catégorie n’est pas présente ne sont jamais inventés. Une catégorie sans ligne active n’est pas rendue publiquement.
 
 ## Prohibited patterns
 

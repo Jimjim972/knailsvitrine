@@ -331,3 +331,24 @@ Après Foundational, répartir par frontières de fichiers :
 - [x] T075 HIGH Préserver et normaliser le statut de réponse Supabase/PostgREST aux frontières de lecture et de mutation afin que le statut réseau `0`, les annulations/délais et les statuts 429/502/503/504 produisent l'état récupérable `unavailable` plutôt que `internal`, sans exposer le détail fournisseur, puis tester les formes de réponse réelles dans `lib/data/services.ts`, `lib/services/errors.ts`, `lib/services/action-core.ts`, `app/(admin)/admin/(protected)/prestations/_actions/service-actions.ts`, `tests/unit/services/actions.test.ts` et `tests/unit/services/diagnostics.test.ts`, conformément à FR-028 et à la décision 12 du plan (partial)
 - [x] T076 MEDIUM Journaliser les échecs d'autorisation indisponible, de mutation et d'invalidation des actions avec un diagnostic strictement limité à la catégorie, la phase et le même identifiant de corrélation que l'état récupérable retourné, puis prouver l'absence d'erreur Supabase brute, de donnée de session et de détail d'infrastructure dans `lib/services/action-core.ts`, `lib/services/diagnostics.ts`, `tests/unit/services/actions.test.ts` et `tests/unit/services/diagnostics.test.ts`, conformément à la décision 12 du plan et SC-012 (partial)
 - [x] T077 MEDIUM Contrôler le champ de montant afin que le passage à « Sur devis » efface immédiatement toute valeur antérieure et le désactive, puis que le retour à « Prix fixe » ou « À partir de » exige une nouvelle valeur valide sans casser la conservation des autres champs après erreur, avec couverture dans `app/(admin)/admin/(protected)/prestations/_components/service-form.tsx` et `tests/services-management/crud.spec.ts`, conformément au cas limite tarifaire de la spécification, à FR-008 et au contrat `admin-services-ui.md` (partial)
+
+## Phase 12: Catégories administrables à la création
+
+**Goal**: Permettre « Administration → Prestations → Nouvelle catégorie », puis l’utilisation immédiate de cette catégorie dans une prestation et sa projection publique non vide, sans ouvrir le renommage ni la suppression.
+
+**Independent Test**: Créer une catégorie valide, refuser son doublon normalisé, vérifier son option unique dans le formulaire, créer une prestation active liée et observer sa section publique générique ; vérifier en parallèle que anon/non-admin ne peuvent pas insérer et que personne ne peut update/delete une catégorie dans ce périmètre.
+
+- [x] T078 Mettre à jour `spec.md`, `plan.md`, `research.md`, `data-model.md`, les contrats et `quickstart.md` avec le périmètre création seule, le fallback visuel, l’omission des catégories vides et les critères SC-013/SC-014
+- [x] T079 Créer par la CLI `supabase/migrations/20260814132648_service_categories.sql` avec table, contraintes, seed des trois catégories, clé étrangère, grants, RLS, index et trigger
+- [x] T080 Ajouter `supabase/tests/database/10_service_categories.sql`, mettre à jour les inventaires existants et enregistrer le test dans `package.json` et `scripts/run-foundation-checks.mjs`
+- [x] T081 Régénérer `lib/supabase/database.types.ts` et centraliser DTO, colonnes explicites, mapping et ordre dynamique dans `lib/services/` et `lib/data/services.ts`
+- [x] T082 Étendre la validation serveur afin que les prestations relisent la catégorie courante avant mutation et que la création de catégorie borne nom/ordre sans accepter de code client
+- [x] T083 Implémenter `createServiceCategoryAction` avec réautorisation, code UUID serveur, insertion RLS, doublon sûr, invalidation `prestations` et flash ponctuel authentifié
+- [x] T084 Créer `/admin/prestations/categories/nouvelle`, son formulaire accessible et les accès « Nouvelle catégorie » depuis la liste et le formulaire de prestation
+- [x] T085 Alimenter les sélecteurs de création/édition depuis Supabase, désactiver sûrement la soumission sans catégorie et préserver les valeurs/erreurs
+- [x] T086 Rendre les sections publiques depuis les catégories en base, conserver les trois présentations initiales, appliquer le fallback générique et omettre les groupes sans prestation active
+- [x] T087 Étendre les tests unitaires de validation, mapping, colonnes et flash ainsi que Playwright pour création/doublon/utilisation/publication et catégorie vide
+- [x] T088 Exécuter reset, pgTAP complet, lint/advisors Supabase, drift des types, unitaires, ESLint, TypeScript, build et suites Playwright Chromium/WebKit ; corriger tout échec
+- [ ] T089 Réaliser le test utilisateur SC-014 chronométré sur la preview : catégorie → prestation active → section publique en moins de 3 minutes, sans aide
+- [ ] T090 Vérifier la cible Supabase de test, appliquer uniquement la migration catégories, pousser `dev` et attendre le déploiement Netlify réussi sans toucher la production
+- [ ] T091 Tester sur Netlify `dev` les parcours catégorie, prestations et régressions publiques, puis consigner les résultats et limites manuelles dans `quickstart.md`
