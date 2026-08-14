@@ -368,3 +368,21 @@ Le parcours fonctionnel Prestations a ensuite été exécuté avec l'autorisatio
 - l'affichage courant contrôlé à 650 px ne présente aucun débordement horizontal ; la matrice automatisée Chromium/WebKit couvre séparément 320, 768 et 1 024 px.
 
 La valeur `SERVICE_SUCCESS_FLASH_SECRET` du seul contexte Netlify `branch-deploy` avait auparavant été corrigée pour respecter la longueur minimale attendue ; les confirmations de création et de modification sont effectivement apparues pendant ce parcours. Aucun secret ni identifiant de session n'est consigné ici. Les contrôles humains sur Safari mobile réel, Firefox, technologie d'assistance et participant non technique restent les seules validations manuelles externes non attestées.
+
+### Extension « Nouvelle catégorie »
+
+La migration `20260814132648_service_categories.sql` a été sauvegardée, vérifiée par dry-run puis appliquée uniquement au projet Supabase de test lié `pfucayywhexemzdfwmcs`. Les historiques local et distant sont alignés. Les commits `d972862` (fonctionnalité/tests) et `53efb53` (documentation) ont été poussés sur `dev`; le branch deploy Netlify `6a7f1e7045617000080141cd` correspondant à `53efb53` est passé à l’état `ready`. La production n’a pas été modifiée.
+
+Les contrôles locaux de l’extension réussissent : reset complet, 348 assertions pgTAP, lint/advisors Supabase, drift des types, 164 tests unitaires, ESLint, TypeScript, build Next.js, 40 parcours Prestations Chromium/WebKit avec 4 scénarios volontairement isolés, 2 contrôles supplémentaires de protection de la nouvelle route et les scénarios d’erreur dédiés. L’advisor conserve uniquement l’avertissement historique de politiques SELECT multiples sur `photos_galerie`, sans nouvel avertissement catégories/prestations.
+
+Sur [`dev--friendly-cactus-227b77.netlify.app`](https://dev--friendly-cactus-227b77.netlify.app), la session administrateur existante a confirmé :
+
+- l’action « Nouvelle catégorie » et la route protégée `/admin/prestations/categories/nouvelle` ;
+- la conservation du nom et de l’ordre après refus des bornes invalides ;
+- le refus serveur du doublon normalisé `SOINS DU CORPS` avec l’erreur reliée au champ Nom ;
+- le chargement des trois catégories initiales dans les formulaires de création et de modification, avec le lien vers la nouvelle catégorie ;
+- le chargement intact d’une prestation existante et de sa catégorie sélectionnée ;
+- les trois sections publiques, neuf cartes et neuf liens « Réserver » ;
+- zéro erreur ou avertissement dans la console navigateur pendant ces contrôles.
+
+Aucune fausse catégorie valide n’a été persistée sur le projet hébergé, car le périmètre demandé ne fournit volontairement ni suppression ni renommage de catégorie. Le scénario complet SC-014 reste donc un test utilisateur à réaliser avec le vrai nom de la prochaine catégorie métier ; le parcours persistant équivalent est couvert localement sous Chromium et WebKit.

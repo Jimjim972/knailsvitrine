@@ -350,5 +350,5 @@ Après Foundational, répartir par frontières de fichiers :
 - [x] T087 Étendre les tests unitaires de validation, mapping, colonnes et flash ainsi que Playwright pour création/doublon/utilisation/publication et catégorie vide
 - [x] T088 Exécuter reset, pgTAP complet, lint/advisors Supabase, drift des types, unitaires, ESLint, TypeScript, build et suites Playwright Chromium/WebKit ; corriger tout échec
 - [ ] T089 Réaliser le test utilisateur SC-014 chronométré sur la preview : catégorie → prestation active → section publique en moins de 3 minutes, sans aide
-- [ ] T090 Vérifier la cible Supabase de test, appliquer uniquement la migration catégories, pousser `dev` et attendre le déploiement Netlify réussi sans toucher la production
-- [ ] T091 Tester sur Netlify `dev` les parcours catégorie, prestations et régressions publiques, puis consigner les résultats et limites manuelles dans `quickstart.md`
+- [x] T090 Vérifier la cible Supabase de test, appliquer uniquement la migration catégories, pousser `dev` et attendre le déploiement Netlify réussi sans toucher la production
+- [x] T091 Tester sur Netlify `dev` les parcours catégorie, prestations et régressions publiques, puis consigner les résultats et limites manuelles dans `quickstart.md`

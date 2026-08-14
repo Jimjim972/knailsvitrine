@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-10
 
-**Status**: Extended locally on 2026-08-14 — category creation and hosted preview gates pending
+**Status**: Extended and deployed to the authorized `dev` preview on 2026-08-14 — non-technical user gate SC-014 pending
 
 **Input**: User description: "003-services-management"
 
