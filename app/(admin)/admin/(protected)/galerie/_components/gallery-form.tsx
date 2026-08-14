@@ -39,7 +39,7 @@ export function GalleryForm({ mode = "create", photo }: { mode?: "create" | "edi
           await compensateCreateGalleryPhotoAction(operation); setUploadState("L’envoi a échoué. La réservation a été nettoyée."); return;
         }
         const finalized = await finalizeCreateGalleryPhotoAction(operation);
-        if (finalized.status === "success") { URL.revokeObjectURL(prepared.previewUrl); router.push("/admin/galerie"); router.refresh(); return; }
+        if (finalized.status === "success") { URL.revokeObjectURL(prepared.previewUrl); router.push("/admin/galerie"); return; }
         setUploadState("message" in finalized ? finalized.message : "La finalisation a échoué.");
       } catch {
         await compensateCreateGalleryPhotoAction(operation).catch(() => undefined);
@@ -47,7 +47,7 @@ export function GalleryForm({ mode = "create", photo }: { mode?: "create" | "edi
       }
     })();
   }, [mode, prepared, router, state]);
-  useEffect(() => { if (mode === "edit" && state.status === "success") { router.push("/admin/galerie"); router.refresh(); } }, [mode, router, state.status]);
+  useEffect(() => { if (mode === "edit" && state.status === "success") router.push("/admin/galerie"); }, [mode, router, state.status]);
   const errors = state.status === "validation" ? state.fieldErrors : {};
   return <form className="admin-service-form admin-gallery-form" action={action}>
     {photo && <><input type="hidden" name="photoId" value={photo.id} /><input type="hidden" name="updatedAt" value={photo.updatedAt} /></>}
