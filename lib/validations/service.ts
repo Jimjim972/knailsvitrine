@@ -66,6 +66,10 @@ export function validateServiceValues(values: ServiceFormValues) {
 }
 
 export const serviceIdSchema = z.uuid("Identifiant de prestation invalide.");
+export const serviceCategoryCodeSchema = z.string().regex(
+  /^[a-z][a-z0-9_]{1,63}$/,
+  "Identifiant de catégorie invalide.",
+);
 
 const categoryFormSchema = z.object({
   name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères.").max(80, "Le nom ne peut pas dépasser 80 caractères."),

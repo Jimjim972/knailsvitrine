@@ -8,6 +8,10 @@ export type ServiceCategory = {
   updatedAt: string;
 };
 
+export type AdminServiceCategory = ServiceCategory & {
+  serviceCount: number;
+};
+
 export type PublicService = {
   id: string;
   name: string;
@@ -75,6 +79,7 @@ export type ServiceCategoryActionState =
   | { status: "validation"; fieldErrors: Partial<Record<keyof ServiceCategoryFormValues, string[]>>; values: ServiceCategoryFormValues }
   | { status: "session_expired"; message: string; values?: ServiceCategoryFormValues }
   | { status: "unavailable" | "internal"; message: string; correlationId: string; values?: ServiceCategoryFormValues }
+  | { status: "not_found" | "conflict"; message: string; values?: ServiceCategoryFormValues }
   | { status: "success"; message: string; categoryCode: string };
 
 export const INITIAL_SERVICE_CATEGORY_ACTION_STATE: ServiceCategoryActionState = { status: "idle" };

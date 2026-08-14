@@ -149,5 +149,35 @@ for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVA
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
     await expect(deleteTrigger).toBeFocused();
+
+    await page.goto("/admin/prestations/categories");
+    await expect(page.getByRole("heading", { name: "Catégories", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await expectTouchTargets(page, ".admin-page-header .admin-button, .admin-category-item .admin-text-action");
+    await expectNoSeriousAxeViolation(page);
+
+    const firstCategory = page.locator(".admin-category-item").first();
+    const editCategory = firstCategory.getByRole("link", { name: "Modifier" });
+    await tabTo(page, editCategory, navigationTabKey);
+    await expectKeyboardFocus(editCategory);
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { name: "Modifier la catégorie" })).toBeVisible();
+    await expect(page.getByLabel("Nom")).toBeVisible();
+    const cancelCategoryEdit = page.getByRole("link", { name: "Annuler" });
+    await tabTo(page, cancelCategoryEdit, navigationTabKey);
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { name: "Catégories", exact: true })).toBeVisible();
+
+    const deleteCategoryTrigger = page.locator(".admin-category-item").first().getByRole("button", { name: "Supprimer" });
+    await tabTo(page, deleteCategoryTrigger, navigationTabKey);
+    await expectKeyboardFocus(deleteCategoryTrigger);
+    await page.keyboard.press("Enter");
+    const categoryDialog = page.getByRole("dialog", { name: "Supprimer la catégorie ?" });
+    await expect(categoryDialog).toBeVisible();
+    await expect(categoryDialog.getByRole("button", { name: "Annuler" })).toBeFocused();
+    await expectNoSeriousAxeViolation(page);
+    await page.keyboard.press("Escape");
+    await expect(categoryDialog).not.toBeVisible();
+    await expect(deleteCategoryTrigger).toBeFocused();
   });
 }

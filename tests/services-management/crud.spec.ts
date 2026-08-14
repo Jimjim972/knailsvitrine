@@ -69,11 +69,12 @@ test("admin creates, edits, masks, reactivates and deletes one service", async (
   const { data, error } = await anon.from("prestations").select("id").eq("nom", `${name} modifiée`); expect(error).toBeNull(); expect(data).toEqual([]); await deleteAuthFixture(runtime, admin);
 });
 
-test("admin creates a category then uses it for a public service", async ({ page }) => {
+test("admin creates, renames, uses and safely deletes a category", async ({ page }) => {
   test.skip(Boolean(process.env.KN_SERVICE_E2E_SCENARIO), "Real-data suite");
   const runtime = getLocalSupabaseRuntime();
   const admin = await createAuthFixture(runtime, "services-category-create", true);
   const categoryName = `Massages E2E ${Date.now()}`;
+  const renamedCategoryName = `${categoryName} relaxants`;
   const serviceName = `Massage catégorie E2E ${Date.now()}`;
 
   await page.goto("/admin/connexion");
@@ -93,8 +94,9 @@ test("admin creates a category then uses it for a public service", async ({ page
   await page.getByLabel("Nom").fill(categoryName);
   await page.getByLabel("Ordre d’affichage").fill("4");
   await page.getByRole("button", { name: "Créer la catégorie" }).click();
-  await expect(page).toHaveURL(/\/admin\/prestations$/);
+  await expect(page).toHaveURL(/\/admin\/prestations\/categories$/);
   await expect(page.getByText("La catégorie a été créée.")).toBeFocused();
+  await expect(page.locator(".admin-category-item", { hasText: categoryName })).toHaveCount(1);
 
   await page.goto("/admin/prestations/categories/nouvelle");
   await page.getByLabel("Nom").fill(`  ${categoryName.toUpperCase()}  `);
@@ -103,8 +105,19 @@ test("admin creates a category then uses it for a public service", async ({ page
   await expect(page.getByLabel("Nom")).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByText("Une catégorie portant ce nom existe déjà.")).toBeVisible();
 
+  await page.goto("/admin/prestations/categories");
+  const categoryItem = page.locator(".admin-category-item", { hasText: categoryName });
+  await categoryItem.getByRole("link", { name: "Modifier" }).click();
+  await page.getByLabel("Nom").fill(renamedCategoryName);
+  await page.getByLabel("Ordre d’affichage").fill("6");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page).toHaveURL(/\/admin\/prestations\/categories$/);
+  await expect(page.getByText("La catégorie a été modifiée.")).toBeFocused();
+  const renamedCategory = page.locator(".admin-category-item", { hasText: renamedCategoryName });
+  await expect(renamedCategory).toContainText("6");
+
   await page.goto("/admin/prestations/nouvelle");
-  const categoryOption = page.getByLabel("Catégorie").locator("option", { hasText: categoryName });
+  const categoryOption = page.getByLabel("Catégorie").locator("option", { hasText: renamedCategoryName });
   await expect(categoryOption).toHaveCount(1);
   const categoryCode = await categoryOption.getAttribute("value");
   expect(categoryCode).toMatch(/^category_[0-9a-f]{32}$/);
@@ -116,15 +129,39 @@ test("admin creates a category then uses it for a public service", async ({ page
   await expect(page).toHaveURL(/\/admin\/prestations$/);
 
   await page.goto("/services");
-  const section = page.getByRole("heading", { name: categoryName, level: 2 }).locator("../..");
+  const section = page.getByRole("heading", { name: renamedCategoryName, level: 2 }).locator("../..");
   await expect(section.getByAltText("Intérieur élégant de l’institut K'nails")).toBeVisible();
   await expect(section.locator(".service-card", { hasText: serviceName })).toContainText("55 €");
+
+  await page.goto("/admin/prestations/categories");
+  const usedCategory = page.locator(".admin-category-item", { hasText: renamedCategoryName });
+  await expect(usedCategory).toContainText("1 prestation");
+  await usedCategory.getByRole("button", { name: "Supprimer" }).click();
+  const categoryDialog = page.getByRole("dialog", { name: "Supprimer la catégorie ?" });
+  await expect(categoryDialog).toContainText("La suppression sera refusée");
+  await categoryDialog.getByRole("button", { name: "Supprimer définitivement" }).click();
+  await expect(categoryDialog.getByRole("alert")).toContainText("contient encore des prestations");
+  await categoryDialog.getByRole("button", { name: "Annuler" }).click();
 
   await page.goto("/admin/prestations");
   const item = page.locator(".admin-service-item", { hasText: serviceName });
   await item.getByRole("button", { name: "Supprimer" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Supprimer définitivement" }).click();
   await expect(item).toHaveCount(0);
+
+  await page.goto("/admin/prestations/categories");
+  const emptyCategory = page.locator(".admin-category-item", { hasText: renamedCategoryName });
+  await expect(emptyCategory).toContainText("0 prestation");
+  await emptyCategory.getByRole("button", { name: "Supprimer" }).click();
+  await page.getByRole("dialog", { name: "Supprimer la catégorie ?" }).getByRole("button", { name: "Supprimer définitivement" }).click();
+  await expect(page).toHaveURL(/\/admin\/prestations\/categories$/);
+  await expect(page.getByText("La catégorie a été supprimée.")).toBeFocused();
+  await expect(page.locator(".admin-category-item", { hasText: renamedCategoryName })).toHaveCount(0);
+
+  const anon = createClient(runtime.apiUrl, runtime.publishableKey, { auth: { persistSession: false } });
+  const categoryRows = await anon.from("categories_prestations").select("code").eq("code", categoryCode ?? "");
+  expect(categoryRows.error).toBeNull();
+  expect(categoryRows.data).toEqual([]);
   await deleteAuthFixture(runtime, admin);
 });
 

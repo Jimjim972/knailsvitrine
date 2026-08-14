@@ -49,7 +49,8 @@ export async function refreshAdminRequest(
   requestHeaders.delete(SERVICE_SUCCESS_FLASH_HEADER);
   requestHeaders.delete(GALLERY_SUCCESS_FLASH_HEADER);
   const secret = getServiceSuccessFlashSecret();
-  const consumesServiceSuccess = request.method === "GET" && request.nextUrl.pathname === "/admin/prestations";
+  const consumesServiceSuccess = request.method === "GET"
+    && (request.nextUrl.pathname === "/admin/prestations" || request.nextUrl.pathname === "/admin/prestations/categories");
   const consumesGallerySuccess = request.method === "GET" && request.nextUrl.pathname === "/admin/galerie";
   const successCookie = consumesGallerySuccess ? GALLERY_SUCCESS_FLASH_COOKIE : SERVICE_SUCCESS_FLASH_COOKIE;
   const successGuardCookie = consumesGallerySuccess ? GALLERY_SUCCESS_FLASH_GUARD_COOKIE : SERVICE_SUCCESS_FLASH_GUARD_COOKIE;

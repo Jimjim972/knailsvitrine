@@ -17,6 +17,8 @@ test("accepts only server-issued service success kinds", () => {
   assert.equal(parseServiceSuccessFlash("edit"), "edit");
   assert.equal(parseServiceSuccessFlash("delete"), "delete");
   assert.equal(parseServiceSuccessFlash("category-create"), "category-create");
+  assert.equal(parseServiceSuccessFlash("category-edit"), "category-edit");
+  assert.equal(parseServiceSuccessFlash("category-delete"), "category-delete");
   assert.equal(parseServiceSuccessFlash("unknown"), null);
   assert.equal(parseServiceSuccessFlash(undefined), null);
 });
@@ -26,6 +28,8 @@ test("maps each confirmed operation to one safe message", () => {
   assert.equal(serviceSuccessMessage("edit"), "La prestation a été modifiée.");
   assert.equal(serviceSuccessMessage("delete"), "La prestation a été supprimée.");
   assert.equal(serviceSuccessMessage("category-create"), "La catégorie a été créée.");
+  assert.equal(serviceSuccessMessage("category-edit"), "La catégorie a été modifiée.");
+  assert.equal(serviceSuccessMessage("category-delete"), "La catégorie a été supprimée.");
 });
 
 test("accepts and maps only the six gallery success kinds", () => {

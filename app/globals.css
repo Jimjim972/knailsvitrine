@@ -1438,6 +1438,10 @@ a {
   box-shadow: 0 3px 10px rgba(47, 18, 27, 0.035);
 }
 
+.admin-category-item {
+  grid-template-columns: minmax(220px, 1fr) minmax(90px, auto) minmax(180px, auto);
+}
+
 .admin-service-copy h2 {
   margin: 0 0 5px;
   overflow-wrap: anywhere;
@@ -1543,7 +1547,7 @@ a {
 .public-services-loading { display: grid; gap: 22px; }
 .public-services-error .primary-button { margin-top: 24px; }
 
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .admin-login-card,
   .admin-welcome-card {
     padding: 24px 20px;

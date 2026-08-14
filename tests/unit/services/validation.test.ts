@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { serviceCategoryFormValues, serviceFormValues, validateServiceCategoryValues, validateServiceValues, validateVisibilityValues } from "../../../lib/validations/service.ts";
+import { serviceCategoryCodeSchema, serviceCategoryFormValues, serviceFormValues, validateServiceCategoryValues, validateServiceValues, validateVisibilityValues } from "../../../lib/validations/service.ts";
 import type { ServiceFormValues } from "../../../lib/services/types.ts";
 
 const valid: ServiceFormValues = { name: "Service valide", description: "Description", category: "onglerie_manucure", priceType: "fixed", price: "45", durationMinutes: "45", badge: "Populaire", displayOrder: "0", active: "true" };
@@ -57,6 +57,8 @@ test("validates category creation values and keeps them after parsing", () => {
   if (result.success) assert.deepEqual(result.data, { name: "Massages", displayOrder: 4 });
   assert.equal(validateServiceCategoryValues({ name: "M", displayOrder: "0" }).success, false);
   assert.equal(validateServiceCategoryValues({ name: "Massages", displayOrder: "-1" }).success, false);
+  assert.equal(serviceCategoryCodeSchema.safeParse("category_1234567890abcdef").success, true);
+  assert.equal(serviceCategoryCodeSchema.safeParse("../category").success, false);
 });
 
 test("defaults visibility only on create and requires closed booleans on update", () => {
