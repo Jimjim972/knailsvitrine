@@ -27,7 +27,7 @@ test("optional labels create no placeholders", async ({ page }) => {
   await expect(card).toContainText("45 min");
 });
 
-test("a category with no active service keeps its neutral public section", async ({ page }) => {
+test("a category with no active service is omitted from the public catalogue", async ({ page }) => {
   test.skip(Boolean(process.env.KN_SERVICE_E2E_SCENARIO), "Real-data suite");
   const admin = authFixture("ADMIN");
   await page.goto("/admin/connexion");
@@ -41,9 +41,7 @@ test("a category with no active service keeps its neutral public section", async
   }
 
   await page.goto("/services");
-  const section = page.getByRole("heading", { name: "Soins du Corps", level: 2 }).locator("../..");
-  await expect(section.getByText("Aucune prestation n’est disponible dans cette catégorie pour le moment.")).toBeVisible();
-  await expect(section.locator(".service-card")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Soins du Corps", level: 2 })).toHaveCount(0);
 
   await page.goto("/admin/prestations");
   for (const name of ["Modelage Relaxant Sur-Mesure", "Gommage Corps Éclat"]) {

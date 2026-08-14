@@ -31,7 +31,7 @@ select extensions.col_default_is('public', 'photos_galerie', 'file_state', 'read
 
 select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_nom_length_check'), 'validation.prestations.name_constraint');
 select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_description_length_check'), 'validation.prestations.description_constraint');
-select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_categorie_check'), 'validation.prestations.category_constraint');
+select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_categorie_fkey'), 'validation.prestations.category_foreign_key');
 select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_type_prix_check'), 'validation.prestations.price_type_constraint');
 select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_prix_bounds_check'), 'validation.prestations.price_bounds_constraint');
 select extensions.ok(to_regclass('public.prestations') is not null and exists (select 1 from pg_constraint where conrelid = to_regclass('public.prestations') and conname = 'prestations_prix_matches_type_check'), 'validation.prestations.price_coupling_constraint');
@@ -109,7 +109,7 @@ select extensions.lives_ok(
 );
 select extensions.throws_ok(
   $$insert into public.prestations (nom, description, categorie, prix, type_prix) values ('Catégorie invalide', 'D', 'autre', 1, 'fixed')$$,
-  '23514', null, 'validation.prestations.category_invalid'
+  '23503', null, 'validation.prestations.category_invalid'
 );
 select extensions.lives_ok(
   $$insert into public.prestations (nom, description, categorie, prix, type_prix) values ('À partir de zéro', 'D', 'soins_corps', 0, 'starting_at')$$,

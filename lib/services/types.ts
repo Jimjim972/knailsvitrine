@@ -1,5 +1,13 @@
 import type { ServiceCategoryCode, ServicePriceType } from "./constants.ts";
 
+export type ServiceCategory = {
+  code: ServiceCategoryCode;
+  name: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PublicService = {
   id: string;
   name: string;
@@ -52,4 +60,21 @@ export type ServiceActionState =
 
 export const INITIAL_SERVICE_ACTION_STATE: ServiceActionState = { status: "idle" };
 
-export type PublicServiceGroups = Record<ServiceCategoryCode, PublicService[]>;
+export type PublicServiceSection = {
+  category: ServiceCategory;
+  services: PublicService[];
+};
+
+export type ServiceCategoryFormValues = {
+  name: string;
+  displayOrder: string;
+};
+
+export type ServiceCategoryActionState =
+  | { status: "idle"; values?: ServiceCategoryFormValues }
+  | { status: "validation"; fieldErrors: Partial<Record<keyof ServiceCategoryFormValues, string[]>>; values: ServiceCategoryFormValues }
+  | { status: "session_expired"; message: string; values?: ServiceCategoryFormValues }
+  | { status: "unavailable" | "internal"; message: string; correlationId: string; values?: ServiceCategoryFormValues }
+  | { status: "success"; message: string; categoryCode: string };
+
+export const INITIAL_SERVICE_CATEGORY_ACTION_STATE: ServiceCategoryActionState = { status: "idle" };

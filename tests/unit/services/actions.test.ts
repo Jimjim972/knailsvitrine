@@ -16,6 +16,35 @@ test("authorization and validation failures stop before mutation and invalidatio
   }
 });
 
+test("an unavailable category lookup stops before mutation with a redacted validation diagnostic", async () => {
+  let mutations = 0;
+  const logged: unknown[] = [];
+  const state = await executeServiceAction({
+    authorize: async () => ({ authorized: true }),
+    validate: async () => { throw { status: 503, message: "RAW_CATEGORY_PROVIDER_DETAIL" }; },
+    mutate: async () => { mutations += 1; return { id: "unexpected" }; },
+    invalidate: () => undefined,
+    values,
+    successMessage: "ok",
+    createCorrelationId: () => "category-validation-cid",
+    logger: (...event) => logged.push(event),
+  });
+
+  assert.equal(mutations, 0);
+  assert.deepEqual(state, {
+    status: "unavailable",
+    message: "Le service est momentanément indisponible. Réessayez.",
+    correlationId: "category-validation-cid",
+    values,
+  });
+  assert.deepEqual(logged, [["services.action.failed", {
+    category: "unavailable",
+    stage: "validation",
+    correlationId: "category-validation-cid",
+  }]]);
+  assert.equal(JSON.stringify({ state, logged }).includes("RAW_"), false);
+});
+
 test("all mutation kinds require an affected id before one invalidation", async () => {
   for (const operation of ["create", "update", "visibility", "delete"]) {
     let invalidations = 0;

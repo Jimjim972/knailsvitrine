@@ -11,7 +11,7 @@ select extensions.results_eq(
 select extensions.results_eq(
   $$select conname from pg_constraint where conrelid = 'public.prestations'::regclass order by 1$$,
   $$values
-    ('prestations_badge_check'::name), ('prestations_categorie_check'::name), ('prestations_description_length_check'::name),
+    ('prestations_badge_check'::name), ('prestations_categorie_fkey'::name), ('prestations_description_length_check'::name),
     ('prestations_duree_minutes_check'::name), ('prestations_image_path_check'::name), ('prestations_nom_length_check'::name),
     ('prestations_ordre_affichage_check'::name), ('prestations_pkey'::name), ('prestations_prix_bounds_check'::name),
     ('prestations_prix_matches_type_check'::name), ('prestations_prix_scale_check'::name), ('prestations_type_prix_check'::name)$$,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { serviceFormValues, validateServiceValues, validateVisibilityValues } from "../../../lib/validations/service.ts";
+import { serviceCategoryFormValues, serviceFormValues, validateServiceCategoryValues, validateServiceValues, validateVisibilityValues } from "../../../lib/validations/service.ts";
 import type { ServiceFormValues } from "../../../lib/services/types.ts";
 
 const valid: ServiceFormValues = { name: "Service valide", description: "Description", category: "onglerie_manucure", priceType: "fixed", price: "45", durationMinutes: "45", badge: "Populaire", displayOrder: "0", active: "true" };
@@ -41,9 +41,22 @@ test("covers supplementary integer, trimming and invalid enum cases", () => {
   const trimmed = validateServiceValues({ ...valid, name: "  Service  ", description: "  D  " });
   assert.equal(trimmed.success, true);
   if (trimmed.success) assert.deepEqual([trimmed.data.name, trimmed.data.description], ["Service", "D"]);
-  assert.equal(validateServiceValues({ ...valid, category: "autre" }).success, false);
+  assert.equal(validateServiceValues({ ...valid, category: "Autre!" }).success, false);
+  assert.equal(validateServiceValues({ ...valid, category: "category_1234567890abcdef" }).success, true);
   assert.equal(validateServiceValues({ ...valid, displayOrder: "2147483648" }).success, false);
   assert.equal(validateServiceValues({ ...valid, active: "on" }).success, false);
+});
+
+test("validates category creation values and keeps them after parsing", () => {
+  const formData = new FormData();
+  formData.set("name", "  Massages  ");
+  formData.set("displayOrder", "4");
+  const values = serviceCategoryFormValues(formData);
+  const result = validateServiceCategoryValues(values);
+  assert.equal(result.success, true);
+  if (result.success) assert.deepEqual(result.data, { name: "Massages", displayOrder: 4 });
+  assert.equal(validateServiceCategoryValues({ name: "M", displayOrder: "0" }).success, false);
+  assert.equal(validateServiceCategoryValues({ name: "Massages", displayOrder: "-1" }).success, false);
 });
 
 test("defaults visibility only on create and requires closed booleans on update", () => {

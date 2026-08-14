@@ -288,6 +288,7 @@ async function main() {
       "supabase/tests/database/07_admin_authentication.sql",
       "supabase/tests/database/08_services_management.sql",
       "supabase/tests/database/09_gallery_management.sql",
+      "supabase/tests/database/10_service_categories.sql",
     ];
     results.push(commandResult(
       "internal.database.pgtap",

@@ -1313,6 +1313,12 @@ a {
   gap: 28px;
   margin-bottom: 36px;
 }
+.admin-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
 
 .admin-page-header p,
 .admin-form-page header p {
@@ -1571,8 +1577,14 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .admin-page-header { flex-direction: column; }
-  .admin-page-header .admin-button { width: 100%; }
+  .admin-page-header {
+    flex-direction: column;
+  }
+
+  .admin-page-actions,
+  .admin-page-header .admin-button {
+    width: 100%;
+  }
   .admin-service-meta { justify-content: space-between; }
   .admin-service-actions { justify-content: flex-start; }
   .admin-dashboard-grid { grid-template-columns: 1fr; }

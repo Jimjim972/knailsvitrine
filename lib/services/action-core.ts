@@ -9,7 +9,7 @@ type MutationResult = { id: string | null; error?: unknown; status?: number };
 
 export type ServiceActionDependencies<T> = {
   authorize: () => Promise<Authorization>;
-  validate: () => Validation<T>;
+  validate: () => Validation<T> | Promise<Validation<T>>;
   mutate: (value: T) => Promise<MutationResult>;
   invalidate: () => void;
   values?: ServiceFormValues;
@@ -24,7 +24,12 @@ export async function executeServiceAction<T>(dependencies: ServiceActionDepende
     if (authorization.state === "session_expired") return { status: "session_expired", message: SERVICE_MESSAGES.session_expired, values: dependencies.values };
     return failureState("unavailable", "authorization", dependencies);
   }
-  const validation = dependencies.validate();
+  let validation: Validation<T>;
+  try {
+    validation = await dependencies.validate();
+  } catch (error) {
+    return failureState(classifyServiceError(error), "validation", dependencies);
+  }
   if (!validation.success) return { status: "validation", fieldErrors: validation.fieldErrors, values: dependencies.values ?? emptyValues() };
   let result: MutationResult;
   try { result = await dependencies.mutate(validation.data); } catch (error) { result = { id: null, error }; }

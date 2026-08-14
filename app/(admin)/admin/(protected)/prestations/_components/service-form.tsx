@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { cloneElement, isValidElement, useActionState, useState, type ReactElement, type ReactNode } from "react";
-import { SERVICE_CATEGORIES } from "@/lib/services/constants";
 import { minorUnitsToDecimal } from "@/lib/services/price";
-import { INITIAL_SERVICE_ACTION_STATE, type AdminService, type ServiceFormValues } from "@/lib/services/types";
+import { INITIAL_SERVICE_ACTION_STATE, type AdminService, type ServiceCategory, type ServiceFormValues } from "@/lib/services/types";
 import { createServiceAction, updateServiceAction } from "../_actions/service-actions";
 
-type Props = { mode: "create" | "edit"; service?: AdminService };
+type Props = { mode: "create" | "edit"; service?: AdminService; categories: ServiceCategory[] };
 
-export function ServiceForm({ mode, service }: Props) {
+export function ServiceForm({ mode, service, categories }: Props) {
   const action = mode === "create" ? createServiceAction : updateServiceAction;
   const [state, formAction, pending] = useActionState(action, INITIAL_SERVICE_ACTION_STATE);
   const retainedValues = "values" in state ? state.values : undefined;
@@ -26,7 +25,8 @@ export function ServiceForm({ mode, service }: Props) {
       <fieldset><legend>Prestation</legend>
         <Field label="Nom" name="name" error={errors.name}><input id="name" name="name" required minLength={2} maxLength={120} autoFocus defaultValue={value("name", service?.name ?? "")} /></Field>
         <Field label="Description" name="description" error={errors.description}><textarea id="description" name="description" required maxLength={1000} rows={6} defaultValue={value("description", service?.description ?? "")} /></Field>
-        <Field label="Catégorie" name="category" error={errors.category}><select id="category" name="category" defaultValue={value("category", service?.category ?? SERVICE_CATEGORIES[0].code)}>{SERVICE_CATEGORIES.map((category) => <option key={category.code} value={category.code}>{category.adminLabel}</option>)}</select></Field>
+        <Field label="Catégorie" name="category" error={errors.category}><select id="category" name="category" required disabled={categories.length === 0} defaultValue={value("category", service?.category ?? categories[0]?.code ?? "")}>{categories.length === 0 ? <option value="">Créez d’abord une catégorie</option> : categories.map((category) => <option key={category.code} value={category.code}>{category.name}</option>)}</select></Field>
+        <Link className="admin-text-action" href="/admin/prestations/categories/nouvelle">Créer une nouvelle catégorie</Link>
       </fieldset>
       <fieldset><legend>Tarif et durée</legend>
         <Field label="Type de tarif" name="priceType" error={errors.priceType}><select id="priceType" name="priceType" value={priceType} onChange={(event) => { const nextType = event.target.value; setPriceType(nextType); if (nextType === "quote") setPrice(""); }}><option value="fixed">Prix fixe</option><option value="starting_at">À partir de</option><option value="quote">Sur devis</option></select></Field>
@@ -41,7 +41,7 @@ export function ServiceForm({ mode, service }: Props) {
       </fieldset>
       {state.status !== "idle" && state.status !== "validation" && <p className={state.status === "success" ? "admin-status success" : "admin-status error"} role={state.status === "success" ? "status" : "alert"}>{state.message}</p>}
       {pending && <p className="admin-status" role="status">Enregistrement en cours…</p>}
-      <div className="admin-form-actions"><Link className="admin-button secondary" href="/admin/prestations">Annuler</Link><button className="admin-button primary" type="submit" disabled={pending}>{pending ? "Enregistrement…" : mode === "create" ? "Créer la prestation" : "Enregistrer"}</button></div>
+      <div className="admin-form-actions"><Link className="admin-button secondary" href="/admin/prestations">Annuler</Link><button className="admin-button primary" type="submit" disabled={pending || categories.length === 0}>{pending ? "Enregistrement…" : mode === "create" ? "Créer la prestation" : "Enregistrer"}</button></div>
     </form>
   );
 }

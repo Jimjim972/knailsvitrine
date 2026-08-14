@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authFixture, createAuthFixture, deleteAuthFixture, expectAdminHome, getLocalSupabaseRuntime, revokeSessionsForFixture, submitLogin } from "./local-supabase";
 
 test("visitors are redirected from every services administration deep link", async ({ page }) => {
-  for (const path of ["/admin/prestations", "/admin/prestations/nouvelle", "/admin/prestations/31000000-0000-4000-8000-000000000001/modifier"]) {
+  for (const path of ["/admin/prestations", "/admin/prestations/nouvelle", "/admin/prestations/categories/nouvelle", "/admin/prestations/31000000-0000-4000-8000-000000000001/modifier"]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/admin\/connexion\?returnTo=/);
   }

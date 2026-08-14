@@ -9,7 +9,7 @@ export const GALLERY_SUCCESS_FLASH_GUARD_COOKIE = "kn-gallery-success-guard";
 export const GALLERY_SUCCESS_FLASH_CONSUMED_COOKIE = "kn-gallery-success-consumed";
 export const GALLERY_SUCCESS_FLASH_HEADER = "x-kn-gallery-success";
 
-export type ServiceSuccessKind = "create" | "edit" | "delete";
+export type ServiceSuccessKind = "create" | "edit" | "delete" | "category-create";
 export type GallerySuccessKind = "gallery-create" | "gallery-edit" | "gallery-show" | "gallery-hide" | "gallery-replace" | "gallery-delete";
 type AdminSuccessKind = ServiceSuccessKind | GallerySuccessKind;
 
@@ -17,6 +17,7 @@ const SERVICE_SUCCESS_MESSAGES: Record<ServiceSuccessKind, string> = {
   create: "La prestation a été créée.",
   edit: "La prestation a été modifiée.",
   delete: "La prestation a été supprimée.",
+  "category-create": "La catégorie a été créée.",
 };
 const GALLERY_SUCCESS_MESSAGES: Record<GallerySuccessKind, string> = {
   "gallery-create": "La photo a été ajoutée.",
@@ -124,7 +125,7 @@ function parseConsumedRegistry(marker: string | undefined, secret: string): Cons
 }
 
 export function parseServiceSuccessFlash(value: string | undefined): ServiceSuccessKind | null {
-  return value === "create" || value === "edit" || value === "delete" ? value : null;
+  return value === "create" || value === "edit" || value === "delete" || value === "category-create" ? value : null;
 }
 
 export function parseGallerySuccessFlash(value: string | undefined): GallerySuccessKind | null {

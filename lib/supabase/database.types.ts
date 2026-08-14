@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      categories_prestations: {
+        Row: {
+          code: string
+          created_at: string
+          nom: string
+          ordre_affichage: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          nom: string
+          ordre_affichage?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          nom?: string
+          ordre_affichage?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       photos_galerie: {
         Row: {
           actif: boolean
@@ -139,7 +163,15 @@ export type Database = {
           type_prix?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prestations_categorie_fkey"
+            columns: ["categorie"]
+            isOneToOne: false
+            referencedRelation: "categories_prestations"
+            referencedColumns: ["code"]
+          },
+        ]
       }
     }
     Views: {
@@ -279,3 +311,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

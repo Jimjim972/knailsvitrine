@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ADMIN_SERVICE_COLUMNS, PUBLIC_SERVICE_COLUMNS } from "../../../lib/services/query-contract.ts";
+import { ADMIN_SERVICE_COLUMNS, PUBLIC_SERVICE_COLUMNS, SERVICE_CATEGORY_COLUMNS } from "../../../lib/services/query-contract.ts";
 
 test("service reads request exact decimal text without widening their columns", () => {
   for (const columns of [ADMIN_SERVICE_COLUMNS, PUBLIC_SERVICE_COLUMNS]) {
@@ -8,4 +8,6 @@ test("service reads request exact decimal text without widening their columns", 
     assert.doesNotMatch(columns, /\*/);
   }
   assert.doesNotMatch(PUBLIC_SERVICE_COLUMNS, /actif|updated_at|image_path/);
+  assert.equal(SERVICE_CATEGORY_COLUMNS, "code,nom,ordre_affichage,created_at,updated_at");
+  assert.doesNotMatch(SERVICE_CATEGORY_COLUMNS, /\*/);
 });

@@ -18,7 +18,7 @@
     "test:e2e:gallery": "playwright test tests/gallery-management",
     "test:e2e:gallery:scenarios": "node scripts/run-gallery-scenario-tests.mjs",
     "supabase:reset": "supabase db reset --local",
-    "supabase:test:db": "supabase test db --local supabase/tests/database/01_schema_constraints.sql supabase/tests/database/02_public_access.sql supabase/tests/database/03_admin_table_access.sql supabase/tests/database/04_storage_policies.sql supabase/tests/database/05_foundation_inventory.sql supabase/tests/database/06_scale_and_order.sql supabase/tests/database/07_admin_authentication.sql supabase/tests/database/08_services_management.sql supabase/tests/database/09_gallery_management.sql",
+    "supabase:test:db": "supabase test db --local supabase/tests/database/01_schema_constraints.sql supabase/tests/database/02_public_access.sql supabase/tests/database/03_admin_table_access.sql supabase/tests/database/04_storage_policies.sql supabase/tests/database/05_foundation_inventory.sql supabase/tests/database/06_scale_and_order.sql supabase/tests/database/07_admin_authentication.sql supabase/tests/database/08_services_management.sql supabase/tests/database/09_gallery_management.sql supabase/tests/database/10_service_categories.sql",
     "supabase:test:auth": "node scripts/check-auth-signup.mjs",
     "supabase:test:storage": "node scripts/check-supabase-storage.mjs",
     "supabase:configure:gallery": "node scripts/configure-gallery-bucket.mjs --local",

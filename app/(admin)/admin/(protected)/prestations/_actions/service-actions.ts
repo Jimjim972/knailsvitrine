@@ -32,6 +32,17 @@ function supabasePayload(value: NormalizedServiceInput): ServiceInsert {
   return payload(value) as unknown as ServiceInsert;
 }
 
+async function validateServiceWithCurrentCategory(values: ReturnType<typeof serviceFormValues>) {
+  const validation = validateServiceValues(values);
+  if (!validation.success) return validation;
+  const supabase = await createSupabaseServerClient();
+  const result = await supabase.from("categories_prestations").select("code").eq("code", validation.data.category).maybeSingle();
+  if (result.error) throw Object.assign(result.error, { status: result.status });
+  return result.data
+    ? validation
+    : { success: false as const, fieldErrors: { category: ["Choisissez une catégorie existante."] } };
+}
+
 async function attachConfirmedSuccess(state: ServiceActionState, kind: ServiceSuccessKind): Promise<ServiceActionState> {
   if (state.status !== "success") return state;
   const proof = issueServiceSuccessFlash(kind, requireServiceSuccessFlashSecret());
@@ -43,7 +54,7 @@ async function attachConfirmedSuccess(state: ServiceActionState, kind: ServiceSu
 
 export async function createServiceAction(_previous: ServiceActionState, formData: FormData): Promise<ServiceActionState> {
   const values = serviceFormValues(formData);
-  const state = await executeServiceAction({ authorize: requireAdminAction, values, validate: () => validateServiceValues(values),
+  const state = await executeServiceAction({ authorize: requireAdminAction, values, validate: () => validateServiceWithCurrentCategory(values),
     mutate: async (value) => { const supabase = await createSupabaseServerClient(); const result = await supabase.from("prestations").insert(supabasePayload(value)).select("id").maybeSingle(); return { id: result.data?.id ?? null, error: result.error, status: result.status }; },
     invalidate: () => updateTag(SERVICES_CACHE_TAG), successMessage: "La prestation a été créée." });
   return attachConfirmedSuccess(state, "create");
@@ -53,7 +64,7 @@ export async function updateServiceAction(_previous: ServiceActionState, formDat
   const values = serviceFormValues(formData, { mode: "update" });
   const id = String(formData.get("serviceId") ?? "");
   const state = await executeServiceAction({ authorize: requireAdminAction, values,
-    validate: () => { const serviceId = serviceIdSchema.safeParse(id); if (!serviceId.success) return { success: false, fieldErrors: { serviceId: ["Identifiant de prestation invalide."] } }; return validateServiceValues(values); },
+    validate: async () => { const serviceId = serviceIdSchema.safeParse(id); if (!serviceId.success) return { success: false as const, fieldErrors: { serviceId: ["Identifiant de prestation invalide."] } }; return validateServiceWithCurrentCategory(values); },
     mutate: async (value) => { const supabase = await createSupabaseServerClient(); const result = await supabase.from("prestations").update(supabasePayload(value)).eq("id", id).select("id").maybeSingle(); return { id: result.data?.id ?? null, error: result.error, status: result.status }; },
     invalidate: () => updateTag(SERVICES_CACHE_TAG), successMessage: "La prestation a été modifiée." });
   return attachConfirmedSuccess(state, "edit");

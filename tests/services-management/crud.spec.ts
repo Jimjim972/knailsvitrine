@@ -48,7 +48,7 @@ test("admin creates, edits, masks, reactivates and deletes one service", async (
   await page.getByRole("button", { name: "Enregistrer" }).click(); await expect(page).toHaveURL(/\/admin\/prestations$/);
   await expect(page.getByText("La prestation a été modifiée.")).toBeFocused();
   const updated = page.locator(".admin-service-item", { hasText: `${name} modifiée` }); await expect(updated).toHaveCount(1);
-  await expect(updated).toContainText("Esthétique et visage"); await expect(updated).toContainText("Nouveau test");
+  await expect(updated).toContainText("Esthétique & Visage"); await expect(updated).toContainText("Nouveau test");
   expect(await updated.getByRole("link", { name: "Modifier" }).getAttribute("href")).toContain(serviceId);
   await expectPublicService(name, false);
   await expectPublicService(`${name} modifiée`, true, "Sur devis");
@@ -67,6 +67,65 @@ test("admin creates, edits, masks, reactivates and deletes one service", async (
   await expectPublicService(`${name} modifiée`, false);
   const anon = createClient(runtime.apiUrl, runtime.publishableKey, { auth: { persistSession: false } });
   const { data, error } = await anon.from("prestations").select("id").eq("nom", `${name} modifiée`); expect(error).toBeNull(); expect(data).toEqual([]); await deleteAuthFixture(runtime, admin);
+});
+
+test("admin creates a category then uses it for a public service", async ({ page }) => {
+  test.skip(Boolean(process.env.KN_SERVICE_E2E_SCENARIO), "Real-data suite");
+  const runtime = getLocalSupabaseRuntime();
+  const admin = await createAuthFixture(runtime, "services-category-create", true);
+  const categoryName = `Massages E2E ${Date.now()}`;
+  const serviceName = `Massage catégorie E2E ${Date.now()}`;
+
+  await page.goto("/admin/connexion");
+  await submitLogin(page, admin.email, admin.password);
+  await expectAdminHome(page);
+  await page.goto("/admin/prestations");
+  await page.getByRole("link", { name: "Nouvelle catégorie" }).click();
+  await expect(page).toHaveURL(/\/admin\/prestations\/categories\/nouvelle$/);
+
+  await page.getByLabel("Nom").fill("A");
+  await page.getByLabel("Ordre d’affichage").fill("-1");
+  await page.getByRole("button", { name: "Créer la catégorie" }).click();
+  await expect(page.getByLabel("Nom")).toHaveValue("A");
+  await expect(page.getByLabel("Nom")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel("Ordre d’affichage")).toHaveAttribute("aria-invalid", "true");
+
+  await page.getByLabel("Nom").fill(categoryName);
+  await page.getByLabel("Ordre d’affichage").fill("4");
+  await page.getByRole("button", { name: "Créer la catégorie" }).click();
+  await expect(page).toHaveURL(/\/admin\/prestations$/);
+  await expect(page.getByText("La catégorie a été créée.")).toBeFocused();
+
+  await page.goto("/admin/prestations/categories/nouvelle");
+  await page.getByLabel("Nom").fill(`  ${categoryName.toUpperCase()}  `);
+  await page.getByLabel("Ordre d’affichage").fill("5");
+  await page.getByRole("button", { name: "Créer la catégorie" }).click();
+  await expect(page.getByLabel("Nom")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText("Une catégorie portant ce nom existe déjà.")).toBeVisible();
+
+  await page.goto("/admin/prestations/nouvelle");
+  const categoryOption = page.getByLabel("Catégorie").locator("option", { hasText: categoryName });
+  await expect(categoryOption).toHaveCount(1);
+  const categoryCode = await categoryOption.getAttribute("value");
+  expect(categoryCode).toMatch(/^category_[0-9a-f]{32}$/);
+  await page.getByLabel("Nom").fill(serviceName);
+  await page.getByLabel("Description").fill("Service lié à une catégorie créée dans l’administration.");
+  await page.getByLabel("Catégorie").selectOption(categoryCode ?? "");
+  await page.getByLabel("Montant (€)").fill("55");
+  await page.getByRole("button", { name: "Créer la prestation" }).click();
+  await expect(page).toHaveURL(/\/admin\/prestations$/);
+
+  await page.goto("/services");
+  const section = page.getByRole("heading", { name: categoryName, level: 2 }).locator("../..");
+  await expect(section.getByAltText("Intérieur élégant de l’institut K'nails")).toBeVisible();
+  await expect(section.locator(".service-card", { hasText: serviceName })).toContainText("55 €");
+
+  await page.goto("/admin/prestations");
+  const item = page.locator(".admin-service-item", { hasText: serviceName });
+  await item.getByRole("button", { name: "Supprimer" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Supprimer définitivement" }).click();
+  await expect(item).toHaveCount(0);
+  await deleteAuthFixture(runtime, admin);
 });
 
 test("invalid creation retains values, links errors and performs no mutation", async ({ page }) => {

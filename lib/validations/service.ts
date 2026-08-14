@@ -1,15 +1,14 @@
 import { z } from "zod";
-import { SERVICE_CATEGORIES, SERVICE_PRICE_TYPES, type ServiceCategoryCode, type ServicePriceType } from "../services/constants.ts";
+import { SERVICE_PRICE_TYPES, type ServiceCategoryCode, type ServicePriceType } from "../services/constants.ts";
 import { minorUnitsToDecimal, parsePriceToMinorUnits } from "../services/price.ts";
-import type { ServiceFormValues } from "../services/types.ts";
+import type { ServiceCategoryFormValues, ServiceFormValues } from "../services/types.ts";
 
-const categoryCodes = SERVICE_CATEGORIES.map(({ code }) => code) as [ServiceCategoryCode, ...ServiceCategoryCode[]];
 const priceTypes = [...SERVICE_PRICE_TYPES] as [ServicePriceType, ...ServicePriceType[]];
 
 const rawSchema = z.object({
   name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères.").max(120, "Le nom ne peut pas dépasser 120 caractères."),
   description: z.string().trim().min(1, "La description est requise.").max(1000, "La description ne peut pas dépasser 1 000 caractères."),
-  category: z.enum(categoryCodes, { message: "Choisissez une catégorie valide." }),
+  category: z.string().trim().regex(/^[a-z][a-z0-9_]{1,63}$/, "Choisissez une catégorie valide."),
   priceType: z.enum(priceTypes, { message: "Choisissez un type de tarif valide." }),
   price: z.string(),
   durationMinutes: z.string().trim().refine((value) => value === "" || /^\d+$/.test(value), "La durée doit être un nombre entier.").refine((value) => value === "" || (Number(value) >= 5 && Number(value) <= 600), "La durée doit être comprise entre 5 et 600 minutes."),
@@ -67,6 +66,23 @@ export function validateServiceValues(values: ServiceFormValues) {
 }
 
 export const serviceIdSchema = z.uuid("Identifiant de prestation invalide.");
+
+const categoryFormSchema = z.object({
+  name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères.").max(80, "Le nom ne peut pas dépasser 80 caractères."),
+  displayOrder: z.string().trim()
+    .regex(/^\d+$/, "L’ordre doit être un entier positif ou nul.")
+    .refine((value) => Number.isSafeInteger(Number(value)) && Number(value) <= 2_147_483_647, "L’ordre dépasse la valeur maximale autorisée."),
+});
+
+export function serviceCategoryFormValues(formData: FormData): ServiceCategoryFormValues {
+  return { name: String(formData.get("name") ?? ""), displayOrder: String(formData.get("displayOrder") ?? "0") };
+}
+
+export function validateServiceCategoryValues(values: ServiceCategoryFormValues) {
+  const parsed = categoryFormSchema.safeParse(values);
+  if (!parsed.success) return { success: false as const, fieldErrors: parsed.error.flatten().fieldErrors };
+  return { success: true as const, data: { name: parsed.data.name, displayOrder: Number(parsed.data.displayOrder) } };
+}
 
 const visibilitySchema = z.object({
   serviceId: serviceIdSchema,
