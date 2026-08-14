@@ -13,13 +13,23 @@ export type Database = {
         Row: {
           actif: boolean
           alt_text: string
+          cleanup_storage_path: string | null
           created_at: string
+          file_state: string
           height: number
           id: string
           libelle: string | null
           lien_externe: string | null
           mime_type: string
+          operation_id: string | null
+          operation_kind: string | null
+          operation_started_at: string | null
           ordre_affichage: number
+          pending_height: number | null
+          pending_size_bytes: number | null
+          pending_storage_path: string | null
+          pending_width: number | null
+          repair_code: string | null
           size_bytes: number
           storage_path: string
           titre: string | null
@@ -30,13 +40,23 @@ export type Database = {
         Insert: {
           actif?: boolean
           alt_text: string
+          cleanup_storage_path?: string | null
           created_at?: string
+          file_state?: string
           height: number
           id?: string
           libelle?: string | null
           lien_externe?: string | null
           mime_type: string
+          operation_id?: string | null
+          operation_kind?: string | null
+          operation_started_at?: string | null
           ordre_affichage?: number
+          pending_height?: number | null
+          pending_size_bytes?: number | null
+          pending_storage_path?: string | null
+          pending_width?: number | null
+          repair_code?: string | null
           size_bytes: number
           storage_path: string
           titre?: string | null
@@ -47,13 +67,23 @@ export type Database = {
         Update: {
           actif?: boolean
           alt_text?: string
+          cleanup_storage_path?: string | null
           created_at?: string
+          file_state?: string
           height?: number
           id?: string
           libelle?: string | null
           lien_externe?: string | null
           mime_type?: string
+          operation_id?: string | null
+          operation_kind?: string | null
+          operation_started_at?: string | null
           ordre_affichage?: number
+          pending_height?: number | null
+          pending_size_bytes?: number | null
+          pending_storage_path?: string | null
+          pending_width?: number | null
+          repair_code?: string | null
           size_bytes?: number
           storage_path?: string
           titre?: string | null

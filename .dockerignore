@@ -1,4 +1,6 @@
 .git
+Dockerfile*
+.dockerignore
 .next
 node_modules
 out
@@ -6,5 +8,6 @@ coverage
 *.log
 .env*
 !.env.example
+!.env.gallery-config.example
 supabase/.branches
 supabase/.temp

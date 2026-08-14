@@ -125,7 +125,7 @@ file_size_limit = "50MiB"
 # objects_path = "./images"
 
 [storage.buckets.galerie]
-public = true
+public = false
 file_size_limit = "8MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 

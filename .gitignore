@@ -14,5 +14,6 @@ Thumbs.db
 *.tsbuildinfo
 .env*
 !.env.example
+!.env.gallery-config.example
 .vscode
 .idea
