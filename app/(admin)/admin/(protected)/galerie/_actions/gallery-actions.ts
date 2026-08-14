@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { requireAdminAction } from "@/lib/auth/admin-session";
 import { GALLERY_BUCKET, GALLERY_CACHE_TAG, GALLERY_IMAGE_LIMITS } from "@/lib/gallery/constants";
 import { validatePublishedWebp } from "@/lib/gallery/published-image-validation";
@@ -21,13 +22,13 @@ import { galleryFormValues, galleryOperationSchema, galleryPhotoIdSchema, galler
 const SESSION_EXPIRED: GalleryActionState = { status: "session_expired", message: "Votre session a expiré. Reconnectez-vous." };
 const INTERNAL = (): GalleryActionState => ({ status: "internal", message: "Une erreur interne est survenue.", correlationId: randomUUID() });
 
-async function withGallerySuccessFlash(state: GalleryActionState, kind: GallerySuccessKind): Promise<GalleryActionState> {
+async function attachGallerySuccess(state: GalleryActionState, kind: GallerySuccessKind): Promise<GalleryActionState> {
   if (state.status !== "success") return state;
   const proof = issueServiceSuccessFlash(kind, requireServiceSuccessFlashSecret());
   const cookieStore = await cookies();
   cookieStore.set(GALLERY_SUCCESS_FLASH_COOKIE, proof.token, gallerySuccessCookieOptions());
   cookieStore.set(GALLERY_SUCCESS_FLASH_GUARD_COOKIE, proof.guard, gallerySuccessCookieOptions());
-  return state;
+  redirect("/admin/galerie");
 }
 
 export async function reserveCreateGalleryPhotoAction(_previous: GalleryActionState, formData: FormData): Promise<GalleryActionState> {
@@ -65,7 +66,7 @@ export async function updateGalleryPhotoAction(_previous: GalleryActionState, fo
   if (updated.error) return INTERNAL();
   if (!updated.data) return { status: "conflict", message: "La photo a été modifiée. Actualisez avant de réessayer.", values };
   updateTag(GALLERY_CACHE_TAG);
-  return withGallerySuccessFlash({ status: "success", message: "La photo a été modifiée.", photoId: updated.data.id }, "gallery-edit");
+  return attachGallerySuccess({ status: "success", message: "La photo a été modifiée.", photoId: updated.data.id }, "gallery-edit");
 }
 
 export async function setGalleryPhotoVisibilityAction(_previous: GalleryActionState, formData: FormData): Promise<GalleryActionState> {
@@ -76,7 +77,7 @@ export async function setGalleryPhotoVisibilityAction(_previous: GalleryActionSt
   const updated = await supabase.from("photos_galerie").update({ actif: parsed.data.active === "true" }).eq("id", parsed.data.photoId).eq("file_state", "ready").select("id").maybeSingle();
   if (updated.error) return INTERNAL(); if (!updated.data) return { status: "conflict", message: "Cette photo ne peut plus être modifiée." };
   updateTag(GALLERY_CACHE_TAG);
-  return withGallerySuccessFlash({ status: "success", message: parsed.data.active === "true" ? "La photo est active." : "La photo est masquée.", photoId: updated.data.id }, parsed.data.active === "true" ? "gallery-show" : "gallery-hide");
+  return attachGallerySuccess({ status: "success", message: parsed.data.active === "true" ? "La photo est active." : "La photo est masquée.", photoId: updated.data.id }, parsed.data.active === "true" ? "gallery-show" : "gallery-hide");
 }
 
 export async function reserveGalleryPhotoReplacementAction(_previous: GalleryActionState, formData: FormData): Promise<GalleryActionState> {
@@ -121,7 +122,7 @@ export async function finalizeGalleryPhotoReplacementAction(formData: FormData):
   if (finalized.error || !finalized.data) return await markReplaceRepair(supabase, row.id, row.operation_id, "metadata_unconfirmed");
   if (row.actif) updateTag(GALLERY_CACHE_TAG);
   const success: GalleryActionState = { status: "success", message: "La photo a été remplacée.", photoId: row.id };
-  return formData.get("announceSuccess") === "true" ? withGallerySuccessFlash(success, "gallery-replace") : success;
+  return formData.get("announceSuccess") === "true" ? attachGallerySuccess(success, "gallery-replace") : success;
 }
 
 export async function markGalleryPhotoObjectMissingAction(_previous: GalleryActionState, formData: FormData): Promise<GalleryActionState> {
@@ -145,13 +146,13 @@ export async function deleteGalleryPhotoAction(_previous: GalleryActionState, fo
   const parsed = galleryPhotoIdSchema.safeParse(formData.get("photoId")); if (!parsed.success) return { status: "validation", fieldErrors: { photoId: ["Identifiant invalide."] } };
   const supabase = await createSupabaseServerClient(); const current = await supabase.from("photos_galerie").select("id,actif,file_state,storage_path").eq("id", parsed.data).maybeSingle();
   if (current.error) return INTERNAL();
-  if (!current.data) return withGallerySuccessFlash({ status: "success", message: "La photo est déjà supprimée.", photoId: parsed.data }, "gallery-delete");
+  if (!current.data) return attachGallerySuccess({ status: "success", message: "La photo est déjà supprimée.", photoId: parsed.data }, "gallery-delete");
   if (current.data.file_state === "pending") return { status: "conflict", message: "Une autre opération est déjà en cours." };
   const operationId = randomUUID(); const started = await supabase.from("photos_galerie").update({ file_state: "pending", operation_kind: "delete", operation_id: operationId, operation_started_at: new Date().toISOString(), repair_code: null, pending_storage_path: null, pending_width: null, pending_height: null, pending_size_bytes: null, cleanup_storage_path: current.data.storage_path })
     .eq("id", current.data.id).eq("file_state", current.data.file_state).select("id").maybeSingle();
   if (started.error || !started.data) return { status: "conflict", message: "La photo a été modifiée. Actualisez avant de réessayer." };
   if (current.data.actif) updateTag(GALLERY_CACHE_TAG);
-  return withGallerySuccessFlash(await finalizeDeleteOperation(supabase, current.data.id, operationId, current.data.storage_path), "gallery-delete");
+  return attachGallerySuccess(await finalizeDeleteOperation(supabase, current.data.id, operationId, current.data.storage_path), "gallery-delete");
 }
 
 export async function finalizeCreateGalleryPhotoAction(formData: FormData): Promise<GalleryActionState> {
@@ -191,7 +192,7 @@ export async function finalizeCreateGalleryPhotoAction(formData: FormData): Prom
   if (finalized.error || !finalized.data) return await markCreateRepair(supabase, row.id, row.operation_id, "metadata_unconfirmed");
   if (row.actif) updateTag(GALLERY_CACHE_TAG);
   const success: GalleryActionState = { status: "success", message: "La photo a été ajoutée.", photoId: row.id };
-  return formData.get("announceSuccess") === "true" ? withGallerySuccessFlash(success, "gallery-create") : success;
+  return formData.get("announceSuccess") === "true" ? attachGallerySuccess(success, "gallery-create") : success;
 }
 
 export async function compensateCreateGalleryPhotoAction(formData: FormData): Promise<GalleryActionState> {

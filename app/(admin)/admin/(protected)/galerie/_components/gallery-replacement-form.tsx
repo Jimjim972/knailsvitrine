@@ -20,7 +20,7 @@ export function GalleryReplacementForm({ photoId, variant }: { photoId: string; 
         const uploaded = await client.storage.from("galerie").upload(state.uploadPath!, prepared.file, { contentType: "image/webp", upsert: false });
         if (uploaded.error) { setMessage("L’envoi a échoué. Utilisez Réparer depuis la liste."); return; }
         const finalized = await finalizeGalleryPhotoReplacementAction(operation);
-        if (finalized.status === "success") { URL.revokeObjectURL(prepared.previewUrl); router.push("/admin/galerie"); return; }
+        if (finalized.status === "success") { URL.revokeObjectURL(prepared.previewUrl); router.push("/admin/galerie"); router.refresh(); return; }
         setMessage("message" in finalized ? finalized.message : "La finalisation a échoué.");
       } catch { setMessage("Le stockage est indisponible. Utilisez Réparer depuis la liste."); }
     })();
