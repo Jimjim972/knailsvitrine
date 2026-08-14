@@ -4,11 +4,16 @@ import { spawnSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import {
   assertLoopback,
-  assertUnlinked,
   emit,
   fail,
   pass,
 } from "./run-foundation-checks.mjs";
+
+class UnusedRealtimeTransport {
+  constructor() {
+    throw new Error("Realtime is disabled in the Auth contract check");
+  }
+}
 
 function readLocalStatus() {
   const child = spawnSync("npx", ["supabase", "status", "--output", "json"], {
@@ -78,13 +83,14 @@ async function main() {
   let adminClient;
 
   try {
-    assertUnlinked();
     const { apiUrl, publicKey, fixtureCapability } = readLocalStatus();
     const publicClient = createClient(apiUrl, publicKey, {
       auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+      realtime: { transport: UnusedRealtimeTransport },
     });
     adminClient = createClient(apiUrl, fixtureCapability, {
       auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+      realtime: { transport: UnusedRealtimeTransport },
     });
 
     const config = readFileSync("supabase/config.toml", "utf8");

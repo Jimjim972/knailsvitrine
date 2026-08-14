@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createServiceSuccessConsumedMarker,
+  gallerySuccessMessage,
   issueServiceSuccessFlash,
+  parseGallerySuccessFlash,
   parseServiceSuccessFlash,
   serviceSuccessMessage,
   verifyServiceSuccessFlash,
@@ -22,6 +24,16 @@ test("maps each confirmed operation to one safe message", () => {
   assert.equal(serviceSuccessMessage("create"), "La prestation a été créée.");
   assert.equal(serviceSuccessMessage("edit"), "La prestation a été modifiée.");
   assert.equal(serviceSuccessMessage("delete"), "La prestation a été supprimée.");
+});
+
+test("accepts and maps only the six gallery success kinds", () => {
+  const kinds = ["gallery-create", "gallery-edit", "gallery-show", "gallery-hide", "gallery-replace", "gallery-delete"] as const;
+  const messages = ["La photo a été ajoutée.", "La photo a été modifiée.", "La photo est active.", "La photo est masquée.", "La photo a été remplacée.", "La photo a été supprimée."];
+  assert.deepEqual(kinds.map((kind) => parseGallerySuccessFlash(kind)), kinds);
+  assert.deepEqual(kinds.map((kind) => gallerySuccessMessage(kind)), messages);
+  assert.equal(parseGallerySuccessFlash("create"), null);
+  const issued = issueServiceSuccessFlash("gallery-create", SECRET, { nowMs: 1_000_000, nonce: "gallery-success-nonce" });
+  assert.deepEqual(verifyServiceSuccessFlash({ token: issued.token, guard: issued.guard, consumedMarker: undefined, secret: SECRET, nowMs: 1_010_000 }), { kind: "gallery-create", nonce: "gallery-success-nonce" });
 });
 
 test("accepts one authentic, fresh and browser-bound success proof", () => {

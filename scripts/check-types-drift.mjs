@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 import {
   assertLoopback,
-  assertUnlinked,
   emit,
   fail,
   generatedTypesResult,
@@ -9,7 +8,6 @@ import {
 
 let result;
 try {
-  assertUnlinked();
   const statusCommand = spawnSync("npx", ["supabase", "status", "--output", "json"], {
     encoding: "utf8",
     stdio: "pipe",

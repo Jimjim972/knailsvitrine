@@ -6,7 +6,7 @@ const serverPort = serverUrl.port || (serverUrl.protocol === "https:" ? "443" : 
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: ["admin-auth/**/*.spec.ts", "services-management/**/*.spec.ts"],
+  testMatch: ["admin-auth/**/*.spec.ts", "services-management/**/*.spec.ts", "gallery-management/**/*.spec.ts"],
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

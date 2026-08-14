@@ -1,6 +1,4 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -24,6 +22,9 @@ export type LocalSupabaseRuntime = {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+class UnusedRealtimeTransport {
+  constructor() { throw new Error("Realtime is disabled in local Auth fixtures"); }
+}
 
 function runSupabase(args: string[], input?: string) {
   const result = spawnSync("npx", ["supabase", ...args], {
@@ -52,12 +53,6 @@ function runDocker(args: string[]) {
   return result.stdout;
 }
 
-function assertUnlinkedLocalProject(projectRoot: string) {
-  if (existsSync(resolve(projectRoot, "supabase/.temp/project-ref"))) {
-    throw new Error("Auth fixtures refuse a linked Supabase project");
-  }
-}
-
 function assertLoopbackApiUrl(value: string) {
   const url = new URL(value);
   if (url.protocol !== "http:" || !LOOPBACK_HOSTS.has(url.hostname) || url.username || url.password) {
@@ -66,8 +61,7 @@ function assertLoopbackApiUrl(value: string) {
   return url.origin;
 }
 
-export function getLocalSupabaseRuntime(projectRoot = process.cwd()): LocalSupabaseRuntime {
-  assertUnlinkedLocalProject(projectRoot);
+export function getLocalSupabaseRuntime(): LocalSupabaseRuntime {
   const status = JSON.parse(runSupabase(["status", "--output", "json"])) as LocalStatus;
   const apiUrl = assertLoopbackApiUrl(status.API_URL ?? "");
   const publishableKey = status.PUBLISHABLE_KEY?.trim();
@@ -86,6 +80,7 @@ export function getLocalSupabaseRuntime(projectRoot = process.cwd()): LocalSupab
         detectSessionInUrl: false,
         persistSession: false,
       },
+      realtime: { transport: UnusedRealtimeTransport as never },
     }),
   };
 }

@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { authFixture, expectAdminHome, submitLogin } from "./fixtures";
 
-test("an authorized admin signs in, sees the real services entry but no fake gallery, and logs out", async ({ page }) => {
+test("an authorized admin signs in, sees the real services and gallery entries, and logs out", async ({ page }) => {
   const admin = authFixture("ADMIN");
   await page.goto("/admin/connexion");
   await submitLogin(page, admin.email, admin.password);
   await expectAdminHome(page);
   await expect(page.getByRole("link", { name: /prestations/i }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /galerie/i })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /galerie/i }).first()).toHaveAttribute("href", "/admin/galerie");
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await expect(page).toHaveURL(/\/admin\/connexion$/);
   await page.goto("/admin");

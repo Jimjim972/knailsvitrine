@@ -1,7 +1,7 @@
 begin;
 \ir 00_test_helpers.sql
 
-select extensions.plan(27);
+select extensions.plan(29);
 
 select extensions.results_eq(
   $$select tablename from pg_tables where schemaname = 'public' and tablename in ('prestations', 'photos_galerie') order by 1$$,
@@ -20,10 +20,16 @@ select extensions.results_eq(
 select extensions.results_eq(
   $$select conname from pg_constraint where conrelid = 'public.photos_galerie'::regclass order by 1$$,
   $$values
-    ('photos_galerie_alt_text_length_check'::name), ('photos_galerie_height_check'::name), ('photos_galerie_libelle_check'::name),
-    ('photos_galerie_lien_externe_https_check'::name), ('photos_galerie_mime_type_check'::name), ('photos_galerie_ordre_affichage_check'::name),
-    ('photos_galerie_pkey'::name), ('photos_galerie_size_bytes_check'::name), ('photos_galerie_storage_mime_match_check'::name),
-    ('photos_galerie_storage_path_check'::name), ('photos_galerie_storage_path_key'::name), ('photos_galerie_titre_check'::name),
+    ('photos_galerie_alt_text_length_check'::name), ('photos_galerie_cleanup_storage_path_check'::name),
+    ('photos_galerie_file_state_check'::name), ('photos_galerie_height_check'::name), ('photos_galerie_libelle_check'::name),
+    ('photos_galerie_lien_externe_https_check'::name), ('photos_galerie_mime_type_check'::name),
+    ('photos_galerie_object_missing_check'::name), ('photos_galerie_operation_kind_check'::name),
+    ('photos_galerie_operation_payload_check'::name), ('photos_galerie_operation_state_check'::name),
+    ('photos_galerie_ordre_affichage_check'::name), ('photos_galerie_pending_dimensions_check'::name),
+    ('photos_galerie_pending_storage_path_check'::name), ('photos_galerie_pkey'::name),
+    ('photos_galerie_repair_code_check'::name), ('photos_galerie_size_bytes_check'::name),
+    ('photos_galerie_storage_mime_match_check'::name), ('photos_galerie_storage_path_check'::name),
+    ('photos_galerie_storage_path_key'::name), ('photos_galerie_titre_check'::name),
     ('photos_galerie_variante_affichage_check'::name), ('photos_galerie_width_check'::name)$$,
   'validation.inventory.photos_constraints'
 );
@@ -37,11 +43,16 @@ select extensions.results_eq(
   $$values ('photos_galerie_public_variant_order_idx'::name), ('prestations_public_category_order_idx'::name)$$,
   'internal.inventory.partial_indexes'
 );
+select extensions.ok(
+  (select indexdef like '%actif%' and indexdef like '%file_state%' and indexdef like '%ready%' from pg_indexes where schemaname = 'public' and indexname = 'photos_galerie_public_variant_order_idx'),
+  'internal.inventory.photos_public_index_active_ready'
+);
 select extensions.ok((select relrowsecurity from pg_class where oid = 'public.prestations'::regclass), 'authorization.inventory.prestations_rls');
 select extensions.ok((select relrowsecurity from pg_class where oid = 'public.photos_galerie'::regclass), 'authorization.inventory.photos_rls');
 select extensions.is((select count(*) from pg_policies where schemaname = 'public' and tablename = 'prestations'), 5::bigint, 'authorization.inventory.prestations_policies');
 select extensions.is((select count(*) from pg_policies where schemaname = 'public' and tablename = 'photos_galerie'), 5::bigint, 'authorization.inventory.photos_policies');
 select extensions.is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname like 'galerie_admin_%'), 4::bigint, 'authorization.inventory.storage_policies');
+select extensions.is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'galerie_public_download'), 1::bigint, 'authorization.inventory.storage_public_download_policy');
 
 select extensions.is(
   array(select (table_name || ':' || privilege_type)::text from information_schema.role_table_grants where grantee = 'anon' and table_schema = 'public' and table_name in ('prestations', 'photos_galerie') order by 1),

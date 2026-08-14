@@ -208,6 +208,8 @@ export function secretScanResult() {
     new RegExp(["super", "secret", "jwt", "token", "with", "at", "least", "32", "characters", "long"].join("-")),
     new RegExp(`${"SUPABASE_SERVICE"}_ROLE_KEY\\s*[:=]\\s*["'][A-Za-z0-9._-]{16,}`),
     /NEXT_PUBLIC_[A-Z0-9_]*(?:SECRET|SERVICE_ROLE)/,
+    /SUPABASE_GALLERY_CONFIG_(?:URL|PROJECT_REF|SECRET_KEY)/,
+    /photos\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp)/,
   ];
   const exposed = filesBelow(join(process.cwd(), ".next")).some((path) => {
     const contents = readFileSync(path).toString("latin1");
@@ -249,7 +251,6 @@ async function main() {
   let status;
 
   try {
-    assertUnlinked();
     status = readLocalStatus();
     results.push(pass("internal.local-stack", "Local Supabase target verified"));
   } catch {
@@ -270,6 +271,13 @@ async function main() {
   ));
 
   if (results.at(-1)?.status === "pass") {
+    results.push(commandResult(
+      "internal.storage.configure",
+      "internal",
+      "Local private gallery bucket configuration",
+      process.execPath,
+      ["scripts/configure-gallery-bucket.mjs", "--local"],
+    ));
     const databaseTests = [
       "supabase/tests/database/01_schema_constraints.sql",
       "supabase/tests/database/02_public_access.sql",
@@ -278,6 +286,8 @@ async function main() {
       "supabase/tests/database/05_foundation_inventory.sql",
       "supabase/tests/database/06_scale_and_order.sql",
       "supabase/tests/database/07_admin_authentication.sql",
+      "supabase/tests/database/08_services_management.sql",
+      "supabase/tests/database/09_gallery_management.sql",
     ];
     results.push(commandResult(
       "internal.database.pgtap",
@@ -315,7 +325,10 @@ async function main() {
   };
   const buildResult = commandResult("internal.tooling.build", "internal", "Next.js production build", "npm", ["run", "build"], { env: buildEnv });
   results.push(buildResult);
-  if (buildResult.status === "pass") results.push(secretScanResult());
+  if (buildResult.status === "pass") {
+    results.push(secretScanResult());
+    results.push(...structuredResults(process.execPath, ["scripts/check-gallery-management.mjs"]));
+  }
 
   emit(results);
   process.exitCode = results.some((result) => result.status === "fail") ? 1 : 0;

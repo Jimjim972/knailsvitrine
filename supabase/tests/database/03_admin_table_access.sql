@@ -1,7 +1,7 @@
 begin;
 \ir 00_test_helpers.sql
 
-select extensions.plan(67);
+select extensions.plan(73);
 
 select tests.create_auth_user('70000000-0000-4000-8000-000000000001', 'admin@foundation.local', 'admin');
 select tests.create_auth_session('71000000-0000-4000-8000-000000000001', '70000000-0000-4000-8000-000000000001');
@@ -18,12 +18,18 @@ insert into public.photos_galerie (id, storage_path, alt_text, variante_affichag
 values
   ('73000000-0000-4000-8000-000000000000', 'photos/74000000-0000-4000-8000-000000000000.webp', 'Active photo', 'small', 1, 1, 'image/webp', 1, true),
   ('73000000-0000-4000-8000-000000000001', 'photos/74000000-0000-4000-8000-000000000001.webp', 'Hidden photo', 'small', 1, 1, 'image/webp', 1, false);
+insert into public.photos_galerie (id, storage_path, alt_text, variante_affichage, width, height, mime_type, size_bytes, actif, file_state, operation_kind, operation_id, operation_started_at, repair_code)
+values
+  ('73000000-0000-4000-8000-000000000010', 'photos/74000000-0000-4000-8000-000000000010.webp', 'Pending photo', 'small', 1, 1, 'image/webp', 1, true, 'pending', 'delete', '75000000-0000-4000-8000-000000000010', now(), null),
+  ('73000000-0000-4000-8000-000000000011', 'photos/74000000-0000-4000-8000-000000000011.webp', 'Repair photo', 'small', 1, 1, 'image/webp', 1, true, 'repair_required', 'replace', '75000000-0000-4000-8000-000000000011', now(), 'object_missing');
 
 select tests.set_request_context('authenticated', '70000000-0000-4000-8000-000000000002', '71000000-0000-4000-8000-000000000002');
 select extensions.is((select count(*) from public.prestations where id = '72000000-0000-4000-8000-000000000000'), 1::bigint, 'authorization.non_admin.active_service');
 select extensions.is((select count(*) from public.photos_galerie where id = '73000000-0000-4000-8000-000000000000'), 1::bigint, 'authorization.non_admin.active_photo');
 select extensions.is_empty($$select id from public.prestations where id = '72000000-0000-4000-8000-000000000001'$$, 'authorization.non_admin.hidden_service');
 select extensions.is_empty($$select id from public.photos_galerie where id = '73000000-0000-4000-8000-000000000001'$$, 'authorization.non_admin.hidden_photo');
+select extensions.is_empty($$select id from public.photos_galerie where id = '73000000-0000-4000-8000-000000000010'$$, 'authorization.non_admin.pending_photo');
+select extensions.is_empty($$select id from public.photos_galerie where id = '73000000-0000-4000-8000-000000000011'$$, 'authorization.non_admin.repair_photo');
 reset role;
 select extensions.ok(tests.mutation_is_blocked('authenticated', $$insert into public.prestations (nom, description, categorie, prix, type_prix) values ('Denied', 'D', 'soins_corps', 1, 'fixed')$$), 'authorization.non_admin.insert');
 select extensions.ok(tests.mutation_is_blocked('authenticated', $$update public.prestations set nom = 'Denied' where id = '72000000-0000-4000-8000-000000000001'$$), 'authorization.non_admin.update_service');
@@ -50,6 +56,8 @@ select extensions.is((select count(*) from public.prestations where id = '720000
 select extensions.is((select count(*) from public.photos_galerie where id = '73000000-0000-4000-8000-000000000000'), 1::bigint, 'authorization.admin.read_active_photo');
 select extensions.is((select count(*) from public.prestations where id = '72000000-0000-4000-8000-000000000001'), 1::bigint, 'authorization.admin.read_hidden_service');
 select extensions.is((select count(*) from public.photos_galerie where id = '73000000-0000-4000-8000-000000000001'), 1::bigint, 'authorization.admin.read_hidden_photo');
+select extensions.is((select count(*) from public.photos_galerie where id = '73000000-0000-4000-8000-000000000010'), 1::bigint, 'authorization.admin.read_pending_photo');
+select extensions.is((select count(*) from public.photos_galerie where id = '73000000-0000-4000-8000-000000000011'), 1::bigint, 'authorization.admin.read_repair_photo');
 select extensions.lives_ok($$insert into public.prestations (id, nom, description, categorie, prix, type_prix) values ('72000000-0000-4000-8000-000000000002', 'Created', 'D', 'esthetique_visage', 2, 'fixed')$$, 'authorization.admin.insert_service');
 select extensions.lives_ok($$insert into public.photos_galerie (id, storage_path, alt_text, variante_affichage, width, height, mime_type, size_bytes) values ('73000000-0000-4000-8000-000000000002', 'photos/74000000-0000-4000-8000-000000000002.png', 'Created', 'social', 1, 1, 'image/png', 1)$$, 'authorization.admin.insert_photo');
 select pg_sleep(0.01);
@@ -105,6 +113,8 @@ select extensions.is((select count(*) from public.prestations where id = '720000
 select extensions.is((select count(*) from public.photos_galerie where id = '73000000-0000-4000-8000-000000000000'), 1::bigint, 'authorization.revoked.read_active_photo');
 select extensions.is_empty($$select id from public.prestations where id = '72000000-0000-4000-8000-000000000001'$$, 'authorization.revoked.read_hidden_denied');
 select extensions.is_empty($$select id from public.photos_galerie where id = '73000000-0000-4000-8000-000000000001'$$, 'authorization.revoked.read_hidden_photo_denied');
+select extensions.is_empty($$select id from public.photos_galerie where id = '73000000-0000-4000-8000-000000000010'$$, 'authorization.revoked.read_pending_photo_denied');
+select extensions.is_empty($$select id from public.photos_galerie where id = '73000000-0000-4000-8000-000000000011'$$, 'authorization.revoked.read_repair_photo_denied');
 reset role;
 select extensions.ok(tests.mutation_is_blocked('authenticated', $$insert into public.prestations (nom, description, categorie, prix, type_prix) values ('Revoked denied', 'D', 'soins_corps', 1, 'fixed')$$), 'authorization.revoked.insert_service_denied');
 select extensions.ok(tests.mutation_is_blocked('authenticated', $$update public.prestations set nom = 'Revoked denied' where id = '72000000-0000-4000-8000-000000000001'$$), 'authorization.revoked.update_service_denied');

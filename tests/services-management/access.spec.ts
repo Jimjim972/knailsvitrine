@@ -42,11 +42,11 @@ test("a current admin sees active and hidden services in deterministic product o
   }
 });
 
-test("the dashboard exposes services but never a fake gallery entry", async ({ page }) => {
+test("the dashboard exposes the real services and gallery entries", async ({ page }) => {
   test.skip(Boolean(process.env.KN_SERVICE_E2E_SCENARIO), "Real-data suite");
   const admin = authFixture("ADMIN"); await page.goto("/admin/connexion"); await submitLogin(page, admin.email, admin.password);
   await expect(page.getByRole("link", { name: "Prestations", exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /galerie/i })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /galerie/i }).first()).toHaveAttribute("href", "/admin/galerie");
 });
 
 test("a revoked session during editing refuses save and gives reconnect guidance", async ({ page }) => {

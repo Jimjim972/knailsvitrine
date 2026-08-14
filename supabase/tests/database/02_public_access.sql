@@ -1,7 +1,7 @@
 begin;
 \ir 00_test_helpers.sql
 
-select extensions.plan(32);
+select extensions.plan(36);
 
 delete from public.prestations where id::text like '31000000-0000-4000-8000-00000000000%';
 
@@ -19,6 +19,11 @@ values
   ('20000000-0000-4000-8000-000000000001', 'photos/50000000-0000-4000-8000-000000000001.webp', 'Active B', 'featured', 1, 1, 'image/webp', 1, 1, true, '2026-01-01T00:00:00Z'),
   ('20000000-0000-4000-8000-000000000002', 'photos/50000000-0000-4000-8000-000000000002.webp', 'Inactive', 'featured', 1, 1, 'image/webp', 1, 0, false, '2026-01-01T00:00:00Z'),
   ('20000000-0000-4000-8000-000000000003', 'photos/50000000-0000-4000-8000-000000000003.webp', 'Active A', 'featured', 1, 1, 'image/webp', 1, 1, true, '2026-01-01T00:00:00Z');
+
+insert into public.photos_galerie (id, storage_path, alt_text, variante_affichage, width, height, mime_type, size_bytes, ordre_affichage, actif, file_state, operation_kind, operation_id, pending_storage_path, pending_width, pending_height, pending_size_bytes, operation_started_at, repair_code, created_at)
+values
+  ('20000000-0000-4000-8000-000000000004', 'photos/50000000-0000-4000-8000-000000000004.webp', 'Pending', 'featured', 1, 1, 'image/webp', 1, 0, true, 'pending', 'replace', '51000000-0000-4000-8000-000000000004', 'photos/52000000-0000-4000-8000-000000000004.webp', 1, 1, 1, now(), null, '2026-01-01T00:00:00Z'),
+  ('20000000-0000-4000-8000-000000000005', 'photos/50000000-0000-4000-8000-000000000005.webp', 'Repair', 'featured', 1, 1, 'image/webp', 1, 0, true, 'repair_required', 'replace', '51000000-0000-4000-8000-000000000005', null, null, null, null, now(), 'object_missing', '2026-01-01T00:00:00Z');
 
 set local role anon;
 select extensions.results_eq(
@@ -39,6 +44,8 @@ select extensions.is_empty(
   $$select id from public.photos_galerie where id = '20000000-0000-4000-8000-000000000002'$$,
   'authorization.anon.photos_inactive_direct'
 );
+select extensions.is_empty($$select id, storage_path from public.photos_galerie where id = '20000000-0000-4000-8000-000000000004'$$, 'authorization.anon.photos_pending_metadata_path_hidden');
+select extensions.is_empty($$select id, storage_path from public.photos_galerie where id = '20000000-0000-4000-8000-000000000005'$$, 'authorization.anon.photos_repair_metadata_path_hidden');
 reset role;
 
 select extensions.ok(tests.mutation_is_blocked('anon', $$insert into public.prestations (id, nom, description, categorie, prix, type_prix) values ('32000000-0000-4000-8000-000000000001', 'Blocked', 'D', 'soins_corps', 1, 'fixed')$$), 'authorization.anon.service_insert_blocked');
@@ -67,6 +74,8 @@ select extensions.results_eq(
   'authorization.authenticated.photos_active_ordered'
 );
 select extensions.is_empty($$select id from public.photos_galerie where id = '20000000-0000-4000-8000-000000000002'$$, 'authorization.authenticated.photos_inactive_direct');
+select extensions.is_empty($$select id, storage_path from public.photos_galerie where id = '20000000-0000-4000-8000-000000000004'$$, 'authorization.authenticated.photos_pending_metadata_path_hidden');
+select extensions.is_empty($$select id, storage_path from public.photos_galerie where id = '20000000-0000-4000-8000-000000000005'$$, 'authorization.authenticated.photos_repair_metadata_path_hidden');
 reset role;
 
 select extensions.ok(tests.mutation_is_blocked('authenticated', $$insert into public.prestations (id, nom, description, categorie, prix, type_prix) values ('32000000-0000-4000-8000-000000000002', 'Blocked', 'D', 'soins_corps', 1, 'fixed')$$), 'authorization.authenticated.service_insert_blocked');
