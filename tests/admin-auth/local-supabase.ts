@@ -62,7 +62,15 @@ function assertLoopbackApiUrl(value: string) {
 }
 
 export function getLocalSupabaseRuntime(): LocalSupabaseRuntime {
-  const status = JSON.parse(runSupabase(["status", "--output", "json"])) as LocalStatus;
+  const explicitRuntime = {
+    API_URL: process.env.KN_LOCAL_SUPABASE_API_URL,
+    PUBLISHABLE_KEY: process.env.KN_LOCAL_SUPABASE_PUBLISHABLE_KEY,
+    SERVICE_ROLE_KEY: process.env.KN_LOCAL_SUPABASE_SERVICE_ROLE_KEY,
+  } satisfies LocalStatus;
+  const hasExplicitRuntime = Object.values(explicitRuntime).some(Boolean);
+  const status = hasExplicitRuntime
+    ? explicitRuntime
+    : JSON.parse(runSupabase(["status", "--output", "json"])) as LocalStatus;
   const apiUrl = assertLoopbackApiUrl(status.API_URL ?? "");
   const publishableKey = status.PUBLISHABLE_KEY?.trim();
   const serviceRoleKey = status.SERVICE_ROLE_KEY?.trim();

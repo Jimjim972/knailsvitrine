@@ -486,7 +486,9 @@ La configuration ponctuelle du bucket galerie constitue un cas distinct du runti
 
 ### 12.2 Accessibilité
 
-- respecter au minimum WCAG 2.1 niveau AA pour les parcours principaux ;
+- respecter WCAG 2.1 niveaux A et AA sur les pages complètes, leurs états représentatifs et les processus complets ;
+- exécuter pour chaque état un scan Axe borné aux tags WCAG 2.1 A/AA sans aucune violation, tous impacts confondus, puis un scan général distinct sans anomalie sérieuse ou critique ;
+- conserver les deux résultats JSON complets avec la preuve Playwright, sans exclusion ni règle désactivée sauf dérogation explicite, datée, bornée et liée à une correction ;
 - navigation complète au clavier ;
 - focus visible ;
 - libellé explicite pour chaque champ ;
@@ -495,6 +497,10 @@ La configuration ponctuelle du bucket galerie constitue un cas distinct du runti
 - textes alternatifs obligatoires pour les images porteuses d'information ;
 - éléments décoratifs ignorés par les technologies d'assistance ;
 - annonces de succès et d'erreur avec une région de statut adaptée.
+- absence de défilement horizontal global à l'équivalent de 320 CSS px, indépendamment du contrôle distinct à 200 % de zoom ;
+- cibles de contrôle du design d'au moins 44 × 44 CSS px, hors lien réellement inline dans un texte ;
+- réduction des mouvements non essentiels lorsque `prefers-reduced-motion: reduce` est actif ;
+- les scans automatisés ne remplacent jamais la revue manuelle Firefox, Safari mobile physique et technologie d'assistance.
 
 ### 12.3 Référencement
 

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const navigation = [
   { href: "/services", label: "Services" },
@@ -14,6 +14,18 @@ const navigation = [
 export function Header() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setIsOpen(false);
+      requestAnimationFrame(() => menuButton.current?.focus());
+    };
+    document.addEventListener("keydown", closeWithEscape);
+    return () => document.removeEventListener("keydown", closeWithEscape);
+  }, [isOpen]);
 
   return (
     <header className="site-header">
@@ -48,8 +60,10 @@ export function Header() {
         </Link>
 
         <button
+          ref={menuButton}
           className="menu-button"
           type="button"
+          aria-controls="mobile-navigation"
           aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={isOpen}
           onClick={() => setIsOpen((value) => !value)}
@@ -59,7 +73,7 @@ export function Header() {
       </div>
 
       {isOpen && (
-        <nav className="mobile-nav" aria-label="Navigation mobile">
+        <nav id="mobile-navigation" className="mobile-nav" aria-label="Navigation mobile">
           {navigation.map((item) => (
             <Link
               className={pathname === item.href ? "nav-link active" : "nav-link"}

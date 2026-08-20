@@ -44,6 +44,7 @@
     "security:check": "node scripts/check-production-security.mjs",
     "seo:check": "node scripts/check-seo.mjs",
     "test:e2e:seo": "KN_PLAYWRIGHT_SUITE=seo KN_PLAYWRIGHT_EXTERNAL_SERVER=true playwright test tests/production-readiness/seo.spec.ts",
+    "test:e2e:accessibility": "KN_PLAYWRIGHT_SUITE=accessibility playwright test tests/production-readiness/accessibility-public.spec.ts tests/production-readiness/accessibility-admin.spec.ts",
     "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
   "dependencies": {

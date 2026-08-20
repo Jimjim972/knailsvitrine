@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { trapDialogFocus } from "@/lib/accessibility/dialog-focus";
 import { INITIAL_SERVICE_CATEGORY_ACTION_STATE } from "@/lib/services/types";
 import { deleteServiceCategoryAction } from "../_actions/service-category-actions";
 
@@ -21,7 +22,7 @@ export function DeleteServiceCategoryDialog({
 
   return <>
     <button ref={trigger} type="button" className="admin-text-action destructive" onClick={() => { dialog.current?.showModal(); queueMicrotask(() => cancel.current?.focus()); }}>Supprimer</button>
-    <dialog ref={dialog} className="admin-delete-dialog" onCancel={(event) => { event.preventDefault(); close(); }} onClose={() => trigger.current?.focus()} aria-labelledby={`delete-category-title-${categoryCode}`}>
+    <dialog ref={dialog} className="admin-delete-dialog" onKeyDown={trapDialogFocus} onCancel={(event) => { event.preventDefault(); close(); }} onClose={() => trigger.current?.focus()} aria-labelledby={`delete-category-title-${categoryCode}`}>
       <form action={action}>
         <input type="hidden" name="categoryCode" value={categoryCode} />
         <h2 id={`delete-category-title-${categoryCode}`}>Supprimer la catégorie ?</h2>

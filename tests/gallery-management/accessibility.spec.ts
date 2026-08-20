@@ -1,10 +1,10 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { expectAccessibilityScans } from "../helpers/accessibility";
 import { authFixture, expectAdminHome, galleryFixture, removeGalleryFixtures, submitLogin } from "./fixtures";
 import { createGalleryClient, getLocalSupabaseRuntime } from "./local-supabase";
 
 for (const width of [320, 768, 1024]) {
-  test(`gallery list is accessible and responsive at ${width}px`, async ({ page }) => {
+  test(`gallery list is accessible and responsive at ${width}px`, async ({ page }, testInfo) => {
     test.skip(Boolean(process.env.KN_GALLERY_E2E_SCENARIO), "Real-data suite");
     await page.setViewportSize({ width, height: 900 });
     const admin = authFixture("ADMIN");
@@ -21,8 +21,7 @@ for (const width of [320, 768, 1024]) {
     await expect(page.locator(`.admin-gallery-item[data-photo-id="${row.id}"]`)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await expect(page.getByRole("status").filter({ hasText: /photo/i })).toBeVisible();
-    const results = await new AxeBuilder({ page }).analyze();
-    expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+    await expectAccessibilityScans(page, testInfo, `gallery-list-${width}`);
     for (const link of await page.locator(".admin-nav a, .admin-pagination a").all()) {
       const box = await link.boundingBox();
       if (box) { expect.soft(box.width).toBeGreaterThanOrEqual(44); expect.soft(box.height).toBeGreaterThanOrEqual(44); }

@@ -225,6 +225,7 @@ Règles d'extension :
 
 - conserver une cible tactile minimale de 44 × 44 px ;
 - fermer le menu après navigation ;
+- fermer aussi le menu mobile avec Échap, puis restaurer le focus sur son bouton ;
 - maintenir `aria-expanded` et un nom accessible dynamique ;
 - ne pas ajouter de contenu qui augmente fortement la hauteur du header ;
 - ajouter un vrai style `:focus-visible` aux liens et au bouton de menu.
@@ -359,6 +360,8 @@ La carte géographique actuelle est une image statique teintée prune. Une futur
 Le footer repose sur un fond gris doux et une grille de quatre colonnes : marque, exploration, contact et horaires. La grille passe à deux colonnes sous 1080 px puis à une colonne sous 760 px.
 
 Les liens sont soulignés d'un trait doré transparent et deviennent dorés au survol. Le copyright est séparé par une bordure supérieure et utilise `--muted` sans transparence afin de conserver un contraste AA sur le fond gris doux.
+
+Les CTA de prestation et les liens autonomes du pied de page occupent au moins 44 px de hauteur. Les cartes Galerie liées révèlent également leur légende au focus clavier ; sur mobile, la légende reste visible sans survol.
 
 ## 9. Mouvement et interactions
 

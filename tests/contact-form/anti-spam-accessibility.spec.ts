@@ -1,5 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { expectAccessibilityScans } from "../helpers/accessibility";
 
 const viewports = [
   { width: 320, height: 760 },
@@ -18,7 +18,7 @@ async function fillValidContactForm(page: Page) {
 }
 
 for (const viewport of viewports) {
-  test(`the honeypot stays hidden from people and Axe at ${viewport.width}px`, async ({ page }) => {
+  test(`the honeypot stays hidden from people and Axe at ${viewport.width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
     await page.goto("/contact");
 
@@ -49,8 +49,7 @@ for (const viewport of viewports) {
     await expect(submit).toBeFocused();
     expect(await form.ariaSnapshot()).not.toMatch(/bot-field|honeypot|ne pas remplir/i);
 
-    const accessibility = await new AxeBuilder({ page }).analyze();
-    expect(accessibility.violations).toEqual([]);
+    await expectAccessibilityScans(page, testInfo, `contact-honeypot-${viewport.width}`);
   });
 }
 

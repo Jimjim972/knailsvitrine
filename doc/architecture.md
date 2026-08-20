@@ -157,6 +157,12 @@ La migration `production_security_hardening` remplace les deux politiques SELECT
 
 `lib/site/structured-data.ts` produit un unique `BeautySalon` JSON-LD à partir des coordonnées confirmées et visibles de `lib/contact-details.ts`. `scripts/check-seo.mjs` vérifie les documents HTTP selon un profil local, preview ou production, puis soumet toute cible hébergée au validateur public Schema.org ; un résultat absent, inaccessible ou inclassable bloque la validation au lieu d'être assimilé à un succès.
 
+## Contrat automatisé d'accessibilité
+
+`tests/helpers/accessibility.ts` centralise les trois viewports obligatoires, les contrôles de reflow, cibles tactiles, focus clavier et réduction des mouvements. Chaque état représentatif produit deux analyses Axe attachées au cas Playwright : un scan WCAG 2.1 A/AA à zéro violation quel que soit l'impact, puis un scan général à zéro anomalie sérieuse ou critique. Le helper n'exclut aucune règle ni aucun nœud ; toute dérogation future devra être explicite, datée et bornée.
+
+Ces contrôles restent des pré-alertes automatisées. Le zoom navigateur, le jugement sur les contrastes complexes et textes alternatifs, Safari sur appareil physique, Firefox réel et les annonces VoiceOver/AT conservent une preuve manuelle distincte et bloquante.
+
 ## Organisation Next.js actuelle pour l'authentification
 
 ```text
