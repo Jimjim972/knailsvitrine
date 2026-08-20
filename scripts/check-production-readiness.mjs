@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { buildReadinessReport, summarizeCoverageBySource } from "../lib/production-readiness/report.ts";
@@ -209,6 +209,10 @@ function treeState(workspace) {
   return execFileSync("git", ["status", "--porcelain"], { cwd: workspace, encoding: "utf8" }).trim() ? "dirty" : "clean";
 }
 
+export function cleanGeneratedBuildState(workspace, remove = rmSync) {
+  remove(resolve(workspace, ".next"), { recursive: true, force: true });
+}
+
 async function main() {
   const workspace = process.cwd();
   const options = parseArgs(process.argv.slice(2));
@@ -230,6 +234,7 @@ async function main() {
   };
   const externalEvidence = loadEvidenceFiles(options.evidence);
   const commands = PROFILE_COMMANDS[options.profile];
+  if (options.profile === "local") cleanGeneratedBuildState(workspace);
   const result = runReadinessOrchestrator({
     profile: options.profile,
     candidate,

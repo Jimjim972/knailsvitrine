@@ -29,6 +29,10 @@ export function assertCommandPlan(
   commands: ReadonlyArray<ReadinessCommandDefinition>,
 ): void;
 export function assertFrozenSha(before: string, after: string): void;
+export function cleanGeneratedBuildState(
+  workspace: string,
+  remove?: (path: string, options: { recursive: true; force: true }) => void,
+): void;
 export function validateCommandResult(result: unknown): ReadinessCommandResult;
 export function createOrchestratedEvidence(input: {
   candidate: ReleaseCandidate;

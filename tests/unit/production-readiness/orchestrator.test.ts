@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   assertCommandPlan,
   assertFrozenSha,
+  cleanGeneratedBuildState,
   PROFILE_COMMANDS,
   runReadinessOrchestrator,
   validateCommandResult,
@@ -21,6 +22,17 @@ const candidate: ReleaseCandidate = {
 };
 
 const passedResult = { command: ["npm", "run", "check"], exitCode: 0, signal: null, stdout: "ok", stderr: "" };
+
+test("le profil local nettoie uniquement le cache de build généré attendu", () => {
+  const calls: Array<{ path: string; options: unknown }> = [];
+  cleanGeneratedBuildState("/workspace/knails", (path, options) => {
+    calls.push({ path: String(path), options });
+  });
+  assert.deepEqual(calls, [{
+    path: "/workspace/knails/.next",
+    options: { recursive: true, force: true },
+  }]);
+});
 
 test("le plan fermé refuse une source omise, dupliquée ou inattendue", () => {
   const plan = PROFILE_COMMANDS.local;
