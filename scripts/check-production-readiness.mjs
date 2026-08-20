@@ -230,7 +230,11 @@ async function main() {
         command: definition.command,
         args: definition.args,
         cwd: workspace,
-        env: { ...process.env, ...definition.env },
+        env: {
+          ...process.env,
+          ...(options.profile === "local" ? { KN_PLAYWRIGHT_LOCAL_GATE: "true" } : {}),
+          ...definition.env,
+        },
         workspace,
         sha,
         artifactPath: `commands/${definition.id}.json`,

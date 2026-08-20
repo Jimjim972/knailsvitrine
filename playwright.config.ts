@@ -8,6 +8,7 @@ const seoMode = process.env.KN_PLAYWRIGHT_SUITE === "seo";
 const accessibilityMode = process.env.KN_PLAYWRIGHT_SUITE === "accessibility";
 const productionReadinessMode = process.env.KN_PLAYWRIGHT_SUITE === "production-readiness";
 const smokeMode = process.env.KN_PLAYWRIGHT_SUITE === "smoke";
+const localGateMode = process.env.KN_PLAYWRIGHT_LOCAL_GATE === "true";
 const externalServer = process.env.KN_PLAYWRIGHT_EXTERNAL_SERVER === "true";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? (contactMode ? "http://127.0.0.1:8888" : "http://127.0.0.1:3000");
 const serverUrl = new URL(baseURL);
@@ -45,6 +46,13 @@ const accessibilityProjects = [
   name: `${browserName}-a11y-${viewport.width}`,
   use: { ...device, viewport, hasTouch: viewport.width === 320 },
 })));
+
+const selectedStandardProjects = localGateMode
+  ? standardProjects.filter((project) => project.name !== "firefox")
+  : standardProjects;
+const selectedAccessibilityProjects = localGateMode
+  ? accessibilityProjects.filter((project) => !project.name.startsWith("firefox-"))
+  : accessibilityProjects;
 
 export default defineConfig({
   testDir: "./tests",
@@ -84,7 +92,9 @@ export default defineConfig({
     screenshot: smokeMode || productionReadinessMode ? "off" : "only-on-failure",
     video: smokeMode || productionReadinessMode ? "off" : "retain-on-failure",
   },
-  projects: accessibilityMode || productionReadinessMode ? accessibilityProjects : standardProjects,
+  projects: accessibilityMode || productionReadinessMode
+    ? selectedAccessibilityProjects
+    : selectedStandardProjects,
   webServer: externalServer ? undefined : {
     command: webServerCommand,
     url: baseURL,

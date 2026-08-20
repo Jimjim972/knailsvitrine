@@ -54,6 +54,8 @@ Résultat attendu :
 - `promotionDecision=not_approved` tant que les preuves de préproduction distantes/manuelles manquent ;
 - `launchDecision=not_ready` tant que la production, son smoke et l'archive finale n'existent pas.
 
+Le profil local positionne en interne `KN_PLAYWRIGHT_LOCAL_GATE=true` pour exécuter les navigateurs hôte Chromium/WebKit sans rester bloqué par un Firefox Playwright natif incompatible avec macOS 27. Cela ne constitue aucune dérogation au candidat : la preuve Firefox automatisée est produite dans l'image officielle Playwright, et `production:preview-check` n'active jamais ce filtre et exige les trois moteurs aux trois largeurs.
+
 Le succès de ce gate capture et fige le SHA candidat. Tout commit ou changement documentaire ultérieur invalide les preuves et impose de reprendre à cette étape. Ne pas relancer manuellement les sous-suites pour masquer un résultat : corriger la cause, produire un nouveau candidat propre, puis rejouer la chaîne complète.
 
 ## 2. Vérifier l'inventaire des variables
