@@ -30,7 +30,8 @@ function isBlockedNetlifyPreviewToolbar(message: string) {
   if (!baseUrl) return false;
   const hostname = new URL(baseUrl).hostname;
   return hostname.startsWith("deploy-preview-") && hostname.endsWith(".netlify.app")
-    && /Framing 'https:\/\/app\.netlify\.com\/'/i.test(message)
+    && /https:\/\/app\.netlify\.com\//i.test(message)
+    && /fram(?:e|ing)|frame-src/i.test(message)
     && /content security policy/i.test(message);
 }
 
