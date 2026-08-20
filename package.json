@@ -45,6 +45,12 @@
     "seo:check": "node scripts/check-seo.mjs",
     "test:e2e:seo": "KN_PLAYWRIGHT_SUITE=seo KN_PLAYWRIGHT_EXTERNAL_SERVER=true playwright test tests/production-readiness/seo.spec.ts",
     "test:e2e:accessibility": "KN_PLAYWRIGHT_SUITE=accessibility playwright test tests/production-readiness/accessibility-public.spec.ts tests/production-readiness/accessibility-admin.spec.ts",
+    "test:e2e:production-readiness": "KN_PLAYWRIGHT_SUITE=production-readiness KN_PLAYWRIGHT_EXTERNAL_SERVER=true playwright test tests/production-readiness/deployment.spec.ts tests/production-readiness/security-headers.spec.ts tests/production-readiness/seo.spec.ts tests/production-readiness/accessibility-public.spec.ts tests/production-readiness/accessibility-admin.spec.ts",
+    "production:smoke": "node scripts/smoke-production.mjs",
+    "production:check": "node --experimental-strip-types scripts/check-production-readiness.mjs --profile local",
+    "production:preview-check": "node --experimental-strip-types scripts/check-production-readiness.mjs --profile preview",
+    "recovery:check": "node scripts/check-recovery-readiness.mjs",
+    "documentation:check": "node --experimental-strip-types scripts/check-documentation-sync.mjs",
     "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
   "dependencies": {

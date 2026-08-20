@@ -6,6 +6,8 @@ const contactMode =
 const securityMode = process.env.KN_PLAYWRIGHT_SUITE === "security";
 const seoMode = process.env.KN_PLAYWRIGHT_SUITE === "seo";
 const accessibilityMode = process.env.KN_PLAYWRIGHT_SUITE === "accessibility";
+const productionReadinessMode = process.env.KN_PLAYWRIGHT_SUITE === "production-readiness";
+const smokeMode = process.env.KN_PLAYWRIGHT_SUITE === "smoke";
 const externalServer = process.env.KN_PLAYWRIGHT_EXTERNAL_SERVER === "true";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? (contactMode ? "http://127.0.0.1:8888" : "http://127.0.0.1:3000");
 const serverUrl = new URL(baseURL);
@@ -58,19 +60,31 @@ export default defineConfig({
               "production-readiness/accessibility-public.spec.ts",
               "production-readiness/accessibility-admin.spec.ts",
             ]
+          : productionReadinessMode
+            ? [
+                "production-readiness/deployment.spec.ts",
+                "production-readiness/security-headers.spec.ts",
+                "production-readiness/seo.spec.ts",
+                "production-readiness/accessibility-public.spec.ts",
+                "production-readiness/accessibility-admin.spec.ts",
+              ]
+            : smokeMode
+              ? ["production-readiness/smoke.spec.ts"]
     : ["admin-auth/**/*.spec.ts", "services-management/**/*.spec.ts", "gallery-management/**/*.spec.ts"],
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["line"], ["html", { open: "never" }]] : "line",
-  globalSetup: contactMode || securityMode || seoMode ? undefined : "./tests/admin-auth/global-setup.ts",
+  globalSetup: contactMode || securityMode || seoMode || productionReadinessMode || smokeMode
+    ? undefined
+    : "./tests/admin-auth/global-setup.ts",
   use: {
     baseURL,
-    trace: "retain-on-failure",
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    trace: smokeMode || productionReadinessMode ? "off" : "retain-on-failure",
+    screenshot: smokeMode || productionReadinessMode ? "off" : "only-on-failure",
+    video: smokeMode || productionReadinessMode ? "off" : "retain-on-failure",
   },
-  projects: accessibilityMode ? accessibilityProjects : standardProjects,
+  projects: accessibilityMode || productionReadinessMode ? accessibilityProjects : standardProjects,
   webServer: externalServer ? undefined : {
     command: webServerCommand,
     url: baseURL,

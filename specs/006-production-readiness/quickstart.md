@@ -31,6 +31,14 @@ npx netlify --version
 
 Le candidat de promotion exige que toutes les modifications de code et de documentation soient terminées et que l'arbre soit propre. Installer les dépendances avec la méthode verrouillée du projet, puis préparer l'environnement local à partir de `.env.example`. Ne copier aucune valeur réelle dans un fichier versionné.
 
+Vérifier l'inventaire documentaire avant le gel :
+
+```bash
+npm run documentation:check
+```
+
+Cette commande refuse une source requise absente, les inventaires FR/SC/critères/gates divergents, les tâches dupliquées et tout document de vérité encore modifié dans l'arbre. `KN_DOCUMENTATION_ALLOW_DIRTY=true` est réservé au développement du checker et ne constitue jamais une preuve de gel.
+
 Lancer le gate complet :
 
 ```bash
@@ -161,10 +169,15 @@ Avant d'autoriser la promotion, comparer Services, Galerie et Contact à `doc/de
 Après les contrôles hébergés, l'accessibilité manuelle et la revue visuelle signée, exécuter une seule fois :
 
 ```bash
-PLAYWRIGHT_BASE_URL="https://<deploy-preview>" npm run production:preview-check
+PLAYWRIGHT_BASE_URL="https://<deploy-preview>" \
+npm run production:preview-check -- \
+  --candidate-started-at "<gel-UTC>" \
+  --evidence "test-results/production-readiness/<sha>/manual/hosted-evidence.json"
 ```
 
-La commande ne doit accepter qu'une URL HTTPS de preview vérifiée construite depuis le SHA figé. Elle exécute `test:e2e:production-readiness`, Schema.org et les doubles scans automatisés sur les trois moteurs, puis agrège les preuves humaines déjà produites en validant leur SHA, leur date, leurs artefacts et leur signature. Elle ne prétend pas exécuter les manipulations sur appareil réel ou avec technologie d'assistance.
+La commande ne doit accepter qu'une URL HTTPS de preview vérifiée construite depuis le SHA figé. `--candidate-started-at` reprend l'horodatage UTC du gel T080 ; chaque `--evidence` peut désigner un objet ou un tableau JSON de preuves manuelles/distantes expurgées. L'orchestrateur exécute `test:e2e:production-readiness`, Schema.org et les doubles scans automatisés sur les trois moteurs, puis agrège les preuves humaines déjà produites en validant leur SHA, leur date, leurs artefacts et leur signature. Il ne prétend pas exécuter les manipulations sur appareil réel ou avec technologie d'assistance.
+
+Le processus Playwright reçoit `AUTH_E2E_ADMIN_EMAIL` et `AUTH_E2E_ADMIN_PASSWORD` pour un compte administrateur jetable dédié à la preview. Sa création, son périmètre et sa suppression après le gate sont consignés dans la preuve hébergée. Le profil hébergé désactive volontairement le `globalSetup` local : il ne lance jamais Supabase CLI/Docker et ne crée aucune identité par une clé locale. Ces deux valeurs restent injectées hors ligne de commande et sont absentes des traces, rapports et captures partagés.
 
 ## 7. Confirmer l'origine puis préparer la production
 
@@ -194,9 +207,18 @@ Publier depuis la branche de production autorisée et vérifier que `COMMIT_REF`
 
 Exécuter :
 
+Injecter d'abord `KN_PRODUCTION_CONTACT_SMOKE_EMAIL`, `KN_PRODUCTION_ADMIN_EMAIL` et `KN_PRODUCTION_ADMIN_PASSWORD` dans la session depuis le gestionnaire de secrets approuvé, sans les placer dans la ligne de commande ni dans l'historique. Puis exécuter les paramètres non secrets :
+
 ```bash
-PRODUCTION_BASE_URL="https://knailsbeauty.fr" npm run production:smoke
+PRODUCTION_BASE_URL="https://knailsbeauty.fr" \
+KN_PRODUCTION_EXPECTED_SHA="<sha-complet-approuvé>" \
+KN_PRODUCTION_DEPLOY_ID="<deploy-id-publié>" \
+KN_PRODUCTION_TECHNICAL_ORIGIN="https://friendly-cactus-227b77.netlify.app" \
+KN_PRODUCTION_CONTACT_SMOKE_AUTHORIZED="true" \
+npm run production:smoke
 ```
+
+Injecter ces valeurs dans le processus ou un gestionnaire de secrets, jamais en historique shell partagé, fichier versionné, rapport, trace, capture ou vidéo. La commande désactive les artefacts navigateur susceptibles de capturer les identifiants. Elle refuse toute autre origine, tout SHA divergent, un hôte technique hors Netlify ou une soumission Contact non explicitement autorisée.
 
 Le smoke test reste non destructif, à l'exception du message Contact contrôlé autorisé par son contrat. Il réussit les 11 contrôles contractuels sur 11 — les trois pages comptent séparément et `robots` reste distinct de `noindex` admin — puis vérifie également :
 
@@ -218,6 +240,21 @@ gh release verify-asset "<release-tag>" "test-results/production-readiness/<sha>
 ```
 
 Ne jamais inscrire un asset dans son propre checksum ni créer un commit de preuve qui changerait le SHA évalué.
+
+## 8 bis. Vérifier la capacité de reprise
+
+Après avoir créé hors dépôt un export logique chiffré, conservé les originaux et réellement restauré sur une cible locale/jetable, exécuter :
+
+```bash
+KN_RECOVERY_CANDIDATE_SHA="<sha-complet>" \
+KN_RECOVERY_ENCRYPTED_EXPORT_PATH="<chemin-hors-dépôt>.age" \
+KN_RECOVERY_ORIGINALS_DIRECTORY="<répertoire-hors-dépôt>" \
+KN_RECOVERY_RESTORE_EVIDENCE_PATH="<preuve-restore.json>" \
+KN_RECOVERY_ROLLBACK_EVIDENCE_PATH="<preuve-rollback.json>" \
+npm run recovery:check
+```
+
+Le checker ne fabrique ni export ni restauration. Il refuse les ressources dans le dépôt, un export non chiffré ou lisible par d'autres utilisateurs, l'absence d'originaux, une restauration non `passed`, un SHA différent ou un deploy de rollback non déclaré compatible. Le rapport ne conserve que digests, statuts, compte d'originaux et identifiant de deploy non secret.
 
 ## 9. Retour arrière
 

@@ -163,6 +163,16 @@ La migration `production_security_hardening` remplace les deux politiques SELECT
 
 Ces contrôles restent des pré-alertes automatisées. Le zoom navigateur, le jugement sur les contrastes complexes et textes alternatifs, Safari sur appareil physique, Firefox réel et les annonces VoiceOver/AT conservent une preuve manuelle distincte et bloquante.
 
+## Agrégation de la préparation production
+
+`lib/production-readiness/report.ts` compare l'inventaire fourni au manifeste canonique de `lib/production-readiness/requirements.ts`. Il refuse tout FR, SC, critère d'acceptation ou gate 001–005 absent, supplémentaire, dupliqué ou rattaché à une autre source/révision. Chaque preuve est validée avant agrégation : ID unique, SHA identique, date postérieure au gel, artefact référencé, signature des contrôles manuels et statut fermé. Une acceptation de risque ne transforme jamais un échec en réussite ; un risque majeur ou critique bloque la promotion.
+
+`scripts/check-production-readiness.mjs` expose deux profils fermés. Le profil `local` exécute une seule fois qualité, typecheck, build, unitaires, Foundation, Auth, Services, Galerie, Contact, SEO, accessibilité, sécurité et scan de secrets. Le profil `preview` exécute une seule fois la garde de cible, la sécurité mutable autorisée, le SEO hébergé et les cinq specs Playwright de préproduction. Un sous-runner omis, dupliqué ou inattendu fait échouer le contrôle. Les exigences non encore démontrées reçoivent explicitement `not_run` avec action requise : elles restent visibles et conservent `promotionDecision=not_approved`.
+
+L'orchestrateur relit le SHA après les commandes, refuse tout changement, agrège uniquement des preuves externes expurgées et datées du même candidat, puis écrit atomiquement `report.json` et `summary.md` sous `test-results/production-readiness/<sha>/`. `approved_for_promotion` exige les gates préproduction passés et une approbation datée. `ready` reste impossible avant les onze smokes de production, l'approbation de lancement et la vérification de l'archive GitHub Release immuable.
+
+`scripts/smoke-production.mjs` est séparé du profil preview. Sa garde exige exactement `https://knailsbeauty.fr`, le SHA Git attendu, l'identifiant du deploy, l'hôte technique Netlify et une autorisation explicite de la soumission Contact. La spec `smoke.spec.ts` contient exactement onze cas numérotés : HTTPS/redirections, Services, Galerie, Contact, soumission réelle, connexion puis déconnexion admin, donnée active, image, sitemap, robots et protection `noindex` admin. Traces, captures et vidéos sont désactivées pour les profils preview final et smoke afin qu'un échec de connexion ne capture pas les identifiants injectés ; les JSON Axe et le rapport HTML expurgé restent conservés.
+
 ## Organisation Next.js actuelle pour l'authentification
 
 ```text

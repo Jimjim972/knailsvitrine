@@ -102,7 +102,7 @@ export function sha256File(path) {
   return `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
 }
 
-export function validateProviderArchive(reference, providerMetadata) {
+export function validateProviderArchive(reference, providerMetadata, expectedAssetDigests) {
   assertSha(reference.candidateSha);
   const expectedAssets = [reference.reportAssetName, reference.summaryAssetName];
   if (reference.provider !== "github_release" || reference.expectedImmutable !== true ||
@@ -114,6 +114,9 @@ export function validateProviderArchive(reference, providerMetadata) {
   for (const assetName of expectedAssets) {
     const digest = providerMetadata.assetDigests?.[assetName];
     if (!/^sha256:[0-9a-f]{64}$/.test(digest ?? "")) throw new Error("archive_digest_missing");
+    if (expectedAssetDigests && expectedAssetDigests[assetName] !== digest) {
+      throw new Error("archive_digest_mismatch");
+    }
   }
   if (Object.keys(providerMetadata.assetDigests).some((name) => !expectedAssets.includes(name))) {
     throw new Error("archive_asset_set_mismatch");

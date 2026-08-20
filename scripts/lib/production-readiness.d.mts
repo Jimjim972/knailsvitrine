@@ -40,6 +40,7 @@ export function validateProviderArchive(
     immutable: boolean;
     assetDigests: Record<string, string>;
   },
+  expectedAssetDigests?: Record<string, string>,
 ): {
   releaseId: string;
   candidateSha: string;

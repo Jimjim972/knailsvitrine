@@ -634,6 +634,14 @@ La clé secrète temporairement obtenue pour une recette preview sert exclusivem
 - un utilisateur cible non technique ajoute et retrouve une photo publique en moins de 3 minutes sans aide, puis réussit au moins 4 des 5 tâches standardisées — retrouver une photo masquée, ajouter, corriger l'alt, remplacer et supprimer — dès la première tentative sans indice.
 - le contrôle froid et la preview respectent le budget galerie de deux demandes/2 Mio avant défilement et neuf invocations/9 Mio par consultation complète, sans doublon d'ID ; le rapport consigne l'extrapolation à 1 000 consultations et la comparaison aux quotas Netlify officiels du jour.
 
+### 15.4 Décision de préparation production
+
+Le manifeste de recette inventorie exactement les 56 exigences de préparation, les 16 critères de succès, les 13 critères d'acceptation de la section 16 et les 72 gates des fonctionnalités 001 à 005. Une source absente, supplémentaire, dupliquée, modifiée ou associée à un autre SHA est refusée. Chaque exigence pointe vers au moins une preuve datée et expurgée ; une preuve obligatoire sans artefact, une preuve manuelle non signée ou une preuve antérieure au gel est invalide.
+
+`npm run production:check` exécute le profil local et produit un rapport honnête même lorsque les contrôles hébergés ou humains restent `not_run`; ce rapport ne peut alors pas autoriser la promotion. Après gel, `npm run production:preview-check` exécute une seule fois la garde et les cinq specs hébergées, puis agrège les preuves humaines déjà réellement signées. Ces commandes ne simulent jamais Safari physique, Firefox réel, VoiceOver, la revue visuelle, une restauration ou un réglage fournisseur.
+
+Après promotion du SHA approuvé, `npm run production:smoke` exige une autorisation explicite pour la soumission Contact et des identifiants administrateur injectés uniquement dans le processus. Il exécute exactement les onze cas contractuels sur `https://knailsbeauty.fr`. La décision reste `not_ready` si un seul cas échoue, si le SHA/deploy diverge, si un risque majeur ou critique subsiste, ou si les deux assets finaux ne sont pas retrouvés avec les mêmes digests dans une GitHub Release publiée et immuable.
+
 ## 16. Critères d'acceptation du MVP
 
 La fonctionnalité est considérée comme terminée lorsque :

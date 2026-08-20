@@ -128,6 +128,20 @@ La restauration Supabase est réservée à une corruption ou perte de données c
 
 Un exercice non destructif s'arrête avant `Publish deploy` dès qu'un prérequis échoue. Le résultat peut donc réussir en démontrant que la procédure refuse correctement une cible non validée ou incompatible, sans faire régresser la production et sans toucher à Supabase. La restauration locale/jetable complète et ses digests sont traités séparément par la recette de reprise finale.
 
+Le contrôle reproductible s'exécute avec `npm run recovery:check`. Il exige un export logique déjà chiffré avec l'extension `.age`, `.gpg` ou `.enc`, non vide, lisible uniquement par son propriétaire et stocké hors du dépôt ; un répertoire hors dépôt contenant les originaux de galerie ; une preuve JSON de restauration locale ou jetable ; et une preuve JSON de compatibilité du dernier deploy validé avec le schéma courant. Les deux preuves portent le SHA candidat et un statut `passed`. La sortie ne révèle aucun chemin : elle conserve uniquement le digest SHA-256 de l'export, le nombre d'originaux, le type de cible restaurée et l'identifiant non secret du deploy de rollback.
+
+Les variables ponctuelles suivantes sont fournies uniquement au processus de recette et ne sont jamais enregistrées dans Netlify :
+
+```text
+KN_RECOVERY_CANDIDATE_SHA
+KN_RECOVERY_ENCRYPTED_EXPORT_PATH
+KN_RECOVERY_ORIGINALS_DIRECTORY
+KN_RECOVERY_RESTORE_EVIDENCE_PATH
+KN_RECOVERY_ROLLBACK_EVIDENCE_PATH
+```
+
+Le contrôle refuse un export ou des originaux placés dans l'arbre Git, un export non chiffré ou trop permissif, une restauration non réussie, une cible autre que locale/jetable, un SHA divergent et un rollback dont la compatibilité de schéma n'est pas explicitement confirmée. Il ne crée aucun export et ne restaure jamais la production.
+
 ## Déploiement prévu
 
 1. Stocker le projet dans un dépôt GitHub.
@@ -137,6 +151,24 @@ Un exercice non destructif s'arrête avant `Publish deploy` dès qu'un prérequi
 5. Activer la détection Netlify Forms, détecter `contact` et `contact-preview`, configurer pour chacun un hook e-mail borné au formulaire, puis vérifier la garde Edge, le classement anti-spam, le `Reply-To` et la notification de test sur une Deploy Preview GitHub du SHA candidat.
 6. Vérifier la connexion, les opérations d'administration et l'affichage des images.
 7. Rattacher les quatre domaines de production à Netlify, remplacer uniquement les enregistrements web OVH des apex et `www`, attendre la propagation et l'émission des certificats, puis prouver toute la matrice HTTP/HTTPS, chemin et paramètres inclus, sans boucle.
+
+## Exploitation minimale et responsabilités
+
+Le responsable technique de promotion signe `approved_for_promotion` après la recette de Deploy Preview. Le propriétaire exploitant du site signe séparément `ready` après le smoke de production et la vérification de l'archive. Une seule personne peut exercer les deux rôles, mais les deux décisions, leurs dates et leur périmètre restent distincts dans le rapport. Une délégation est consignée avant l'exécution et non ajoutée a posteriori.
+
+| Contrôle | Fréquence minimale | Seuil d'action | Action et responsable |
+| --- | --- | --- | --- |
+| crédits, requêtes, calcul et trafic Netlify | chaque semaine et avant un déploiement | 50 % : suivre la tendance ; 75 % : suspendre les deploys non indispensables ; 90 % : plan de réduction ou changement d'offre | responsable technique |
+| base, Storage, egress et activité Auth Supabase | chaque semaine et avant un import d'images | mêmes paliers relatifs au quota réellement affiché par le fournisseur | responsable technique |
+| erreurs Netlify/Supabase expurgées | chaque semaine, puis quotidiennement pendant 7 jours après lancement | répétition d'une erreur, échec Contact/Auth ou 5xx public | responsable technique ; incident ouvert sans copier de donnée sensible |
+| export logique chiffré et originaux | avant toute migration/opération importante et au minimum mensuellement | export absent, illisible, trop permissif ou original manquant | aucune opération importante ; propriétaire et responsable technique |
+| exercice de restauration jetable | avant lancement puis trimestriellement | digest, inventaire, contraintes, RLS ou fichiers divergents | `not_ready`, corriger la procédure avant production |
+| deploy de rollback compatible | avant chaque promotion | ancien deploy non `ready`, variables/cible inconnues ou schéma incompatible | roll-forward obligatoire |
+| archive finale GitHub Release | à chaque lancement | release non publiée/immuable, asset absent ou digest divergent | lancement non officiel |
+
+Les journaux conservés contiennent uniquement horodatage, SHA/deploy, route ou opération fermée, code de résultat et identifiant opaque de corrélation. Ils excluent e-mail, contenu Contact, cookies, JWT, clés, mots de passe, chemins Storage et noms de fichiers originaux. Toute exportation de logs est rescannée avant partage.
+
+Les originaux de galerie sont conservés hors dépôt et hors bucket applicatif dans un emplacement contrôlé par le propriétaire, avec un inventaire par digest. L'export PostgreSQL ne contient pas les octets Storage ; la procédure de reprise restaure la base sur une cible locale/jetable, vérifie migrations/contraintes/RLS/inventaires, puis réenvoie séparément les originaux. Le dernier rapport et son résumé sont conservés comme les deux seuls assets de la GitHub Release immuable liée au SHA.
 
 ## Évolution possible
 
