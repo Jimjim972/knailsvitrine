@@ -64,7 +64,7 @@ function countFindings(text, patterns) {
   let count = 0;
   for (const pattern of patterns) {
     pattern.lastIndex = 0;
-    for (const _match of text.matchAll(pattern)) count += 1;
+    count += Array.from(text.matchAll(pattern)).length;
   }
   return count;
 }
