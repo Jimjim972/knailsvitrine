@@ -12,10 +12,13 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:unit": "node --test --experimental-strip-types tests/unit/auth/*.test.ts tests/unit/services/*.test.ts tests/unit/gallery/*.test.ts",
+    "test:unit:contact": "node --test --experimental-strip-types tests/unit/contact/*.test.ts",
     "test:e2e:auth": "playwright test tests/admin-auth",
     "test:e2e:services": "playwright test tests/services-management",
     "test:e2e:services:scenarios": "node scripts/run-services-scenario-tests.mjs",
     "test:e2e:gallery": "playwright test tests/gallery-management",
+    "test:e2e:contact": "playwright test tests/contact-form",
+    "test:e2e:contact:scenarios": "node scripts/run-contact-scenario-tests.mjs",
     "test:e2e:gallery:scenarios": "node scripts/run-gallery-scenario-tests.mjs",
     "supabase:reset": "supabase db reset --local",
     "supabase:test:db": "supabase test db --local supabase/tests/database/01_schema_constraints.sql supabase/tests/database/02_public_access.sql supabase/tests/database/03_admin_table_access.sql supabase/tests/database/04_storage_policies.sql supabase/tests/database/05_foundation_inventory.sql supabase/tests/database/06_scale_and_order.sql supabase/tests/database/07_admin_authentication.sql supabase/tests/database/08_services_management.sql supabase/tests/database/09_gallery_management.sql supabase/tests/database/10_service_categories.sql",
@@ -32,6 +35,8 @@
     "auth:check": "node scripts/check-admin-auth.mjs",
     "services:check": "node scripts/check-services-management.mjs",
     "gallery:check": "node scripts/check-gallery-management.mjs",
+    "contact:dev": "netlify dev --port 8888",
+    "contact:check": "node scripts/check-contact-form.mjs",
     "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
   "dependencies": {
@@ -44,12 +49,14 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
+    "@netlify/edge-functions": "4.0.0",
     "@playwright/test": "1.62.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.0",
+    "netlify-cli": "27.1.2",
     "sharp": "0.35.3",
     "supabase": "2.112.0",
     "typescript": "^5.8.0"

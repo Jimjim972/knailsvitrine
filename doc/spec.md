@@ -164,13 +164,26 @@ Le formulaire existant est actuellement une simulation et n'envoie aucun message
 
 Le choix initial est d'utiliser Netlify Forms afin d'éviter un service d'e-mail ou une table supplémentaire. Les champs prévus sont : nom, téléphone facultatif, e-mail et message.
 
+Les coordonnées publiques confirmées sont : N°371, Chemin La Hubert, Saint-Joseph 97212, Martinique. L'institut ouvre le lundi, mardi, jeudi et vendredi de 09h00 à 17h00, le samedi de 08h00 à 12h00, et ferme le mercredi et le dimanche. Ces informations sont identiques sur la page Contact et dans le footer.
+
 Le formulaire devra :
 
-- effectuer une validation côté navigateur et côté serveur ou plateforme ;
-- afficher un retour de réussite réel uniquement après réception confirmée ;
+- effectuer une validation côté navigateur, dans la Server Action et dans la garde Edge qui protège les POST directs vers Netlify Forms ;
+- afficher un retour de réussite réel uniquement après autorisation de la Server Action et réponse HTTP positive de Netlify au POST navigateur ;
 - afficher une erreur exploitable en cas d'échec ;
-- inclure une protection anti-spam ;
+- conserver les valeurs saisies et permettre un réessai après un échec récupérable ;
+- empêcher les doubles soumissions pendant un envoi en cours ;
+- inclure le filtrage anti-spam de la plateforme et un champ leurre invisible aux visiteurs ordinaires ;
+- envoyer automatiquement à l'adresse opérationnelle de l'institut une notification pour chaque soumission vérifiée, avec l'e-mail du visiteur comme adresse de réponse ;
 - ne pas enregistrer les messages dans les tables publiques Supabase.
+
+Les règles initiales des champs sont : nom obligatoire de 2 à 120 caractères, e-mail obligatoire de 254 caractères maximum avec un format exploitable, téléphone facultatif de 6 à 30 caractères contenant au moins six chiffres lorsqu'il est renseigné, et message obligatoire de 10 à 2 000 caractères. Les espaces périphériques sont supprimés avant validation. Le téléphone peut contenir `+`, espaces, points, tirets et parenthèses afin de prendre en charge les formats locaux et internationaux usuels.
+
+Le navigateur remet d'abord la saisie à une Server Action Next.js. Celle-ci revalide les données avec Zod et retourne uniquement un instantané normalisé autorisé. Le navigateur ajoute ensuite les champs techniques réservés au fournisseur et envoie cette charge URL-encodée vers le chemin relatif constant `/__forms.html`, sans cookies. Le formulaire React ne déclare pas `form-name` dans sa requête vers la Server Action ; la garde Edge laisse donc cette étape atteindre Next.js, tout en revalidant tout POST qui déclare `form-name=contact` avant Netlify Forms.
+
+Le formulaire présente quatre états distincts et accessibles : neutre, envoi en cours, envoi réussi et erreur récupérable. Une erreur conserve les quatre valeurs et n'affiche jamais de faux succès ; seule l'autorisation serveur suivie d'une réponse HTTP positive de Netlify autorise le succès visible et vide les champs, sans prétendre connaître le classement anti-spam final. L'appel fournisseur expire exactement 10 secondes après le démarrage du `fetch` navigateur ; ce délai indique honnêtement que la réception n'a pas pu être confirmée. Les demandes vérifiées sont consultées dans l'interface Netlify du MVP, sans ajouter de boîte de réception à `/admin`.
+
+La notification Netlify est configurée vers une adresse opérationnelle confirmée de l'institut et n'est déclenchée que pour les soumissions vérifiées. L'adresse destinataire n'est pas versionnée. Cette fonctionnalité n'envoie pas d'autoréponse e-mail au visiteur.
 
 Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remplacement devra être décidée avant implémentation : envoi par un fournisseur d'e-mail transactionnel ou stockage sécurisé dans Supabase avec protection anti-spam.
 
@@ -589,7 +602,7 @@ La fondation Supabase vérifie séparément les droits de suppression de la lign
 - textes alternatifs présents ;
 - chaque modification confirmée est visible dès le premier rendu administratif suivant la réponse de l'action, sans actualisation manuelle, puis sur une nouvelle consultation publique en moins de cinq secondes et sans redéploiement ;
 - connexion, expiration de session et déconnexion opérationnelles ;
-- formulaire de contact réellement reçu avant d'afficher le succès ;
+- formulaire de contact accusé positivement par Netlify avant d'afficher le succès ;
 - navigation mobile et clavier validée.
 - somme des entrées `layout-shift` attribuables aux images de galerie égale à 0 sur le parcours automatisé ;
 - conversion colorimétrique mesurée sur un corpus opaque versionné de trois images sRGB et trois Display-P3, avec 25 coordonnées normalisées `(u,v)` dans `[0,1]²` et triplets sRGB 8 bits par image ; chaque pixel est choisi par `x=floor(u×(largeur−1)+0,5)`, `y=floor(v×(hauteur−1)+0,5)` puis borné, et références/sorties sont converties de sRGB vers CIE Lab D65, observateur 2°, sans adaptation D50, avant CIEDE2000 ; sur les 150 échantillons de l'aperçu exact comme du WebP finalisé, la médiane est <=2 et le P95 au rang le plus proche, rang 143 en base 1, est <=5 ;

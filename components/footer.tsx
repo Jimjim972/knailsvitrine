@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cacheLife } from "next/cache";
+import { CONTACT_ADDRESS, CONTACT_OPENING_HOURS } from "@/lib/contact-details";
 
 async function getCurrentYear() {
   "use cache";
@@ -24,13 +25,14 @@ export async function Footer() {
         <div className="footer-column">
           <h2>Nous contacter</h2>
           <Link href="/contact">Contact & rendez-vous</Link>
-          <p>123 Avenue de la Beauté, Paris</p>
+          <p>{CONTACT_ADDRESS}</p>
           <a href="tel:+33123456789">+33 1 23 45 67 89</a>
         </div>
         <div className="footer-column">
           <h2>Horaires</h2>
-          <p>Mar – Sam : 10h00 – 19h00</p>
-          <p>Fermé le lundi et le dimanche</p>
+          {CONTACT_OPENING_HOURS.map(({ days, hours }) => (
+            <p key={days}>{days} : {hours}</p>
+          ))}
         </div>
       </div>
       <p className="copyright">© {currentYear} K&apos;nails Beauty Institut. Tous droits réservés.</p>

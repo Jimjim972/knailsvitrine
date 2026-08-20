@@ -33,7 +33,17 @@ Vercel Hobby peut rester utile pour les tests ou les prévisualisations, mais le
 - le site peut être suspendu jusqu'au prochain cycle si tous les crédits sont consommés ;
 - aucun dépassement payant automatique sur l'offre Free.
 
+Sur les plans à crédits actuels, Netlify Forms est inclus gratuitement et sans quota propre de soumissions. Le trafic reste toutefois comptabilisé comme requêtes web dans le budget du site. Une Edge Function n'ajoute pas de consommation de calcul, mais son invocation compte elle aussi comme requête web. Les comptes Netlify Legacy suivent un modèle distinct : l'offre réellement attachée au site doit être vérifiée avant la mise en production.
+
 Les fichiers restent dans Supabase Storage, mais le bucket galerie est privé et les octets sont relayés sans transformation par une Route Handler Netlify qui réautorise chaque demande. Le trafic et les invocations correspondants doivent donc être surveillés dans le budget Free.
+
+## Formulaire de contact Netlify
+
+Le site utilise Netlify Forms sans variable secrète et sans stockage Supabase supplémentaire. La détection des formulaires doit être activée dans Netlify avant le déploiement de contrôle, puis le site doit être redéployé afin que le blueprint statique `public/__forms.html` soit détecté.
+
+Le navigateur invoque d'abord une Server Action Next.js sans déclarer `form-name`. L'action revalide avec Zod et retourne un instantané normalisé autorisé. Le navigateur ajoute alors `form-name=contact` et POSTe la charge URL-encodée vers le chemin relatif constant `/__forms.html`, avec les credentials omis et un timeout exact de 10 secondes. Aucune origine configurable ou fournie par l'appelant n'est acceptée. Une Edge Function versionnée laisse passer sans lecture les requêtes internes portant `Next-Action`, puis revalide tout autre POST qui déclare `form-name=contact` avant le traitement de Forms. Le honeypot déclaré et Akismet restent les filtres anti-spam natifs ; aucun captcha visible n'est ajouté au MVP.
+
+Le succès navigateur repose sur l'autorisation renvoyée par la Server Action puis un statut HTTP positif du fournisseur, pas sur le classement final Verified/Spam que Netlify ne renvoie pas au client. Une notification Netlify est configurée vers l'adresse opérationnelle confirmée de l'institut pour les seules soumissions vérifiées ; le champ `email` alimente le `Reply-To`. Cette adresse reste dans la configuration Netlify et n'est pas versionnée. Aucune autoréponse au visiteur n'est prévue. La Deploy Preview doit contrôler séparément la chaîne hybride, les POST directs, la détection, la garde Edge, la réception humaine, le honeypot, Akismet et la notification. Un délai réseau ambigu conserve un identifiant opaque de corrélation pour rendre un éventuel doublon repérable, sans prétendre que Netlify fournit une idempotence.
 
 ### Supabase Free
 
@@ -93,8 +103,9 @@ Netlify prend en charge les Server Actions via son adaptateur OpenNext sans anci
 2. Importer le dépôt dans Netlify.
 3. Laisser Netlify détecter et construire l'application Next.js.
 4. Configurer les variables d'environnement Supabase et le secret serveur de confirmation dans Netlify.
-5. Vérifier la connexion, les opérations d'administration et l'affichage des images.
-6. Connecter le domaine personnalisé et activer le HTTPS.
+5. Activer la détection Netlify Forms, configurer la notification vers l'adresse opérationnelle confirmée de l'institut, redéployer, puis vérifier le blueprint, la garde Edge, le classement anti-spam, le `Reply-To` et la notification sur une Deploy Preview.
+6. Vérifier la connexion, les opérations d'administration et l'affichage des images.
+7. Connecter le domaine personnalisé et activer le HTTPS.
 
 ## Évolution possible
 
@@ -108,6 +119,12 @@ Si les limites gratuites deviennent insuffisantes :
 
 - [Netlify Free](https://www.netlify.com/pricing/)
 - [Prise en charge de Next.js par Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/overview/)
+- [Netlify Forms avec OpenNext](https://opennext.js.org/netlify/forms)
+- [Configuration de Netlify Forms](https://docs.netlify.com/manage/forms/setup/)
+- [Filtres anti-spam Netlify Forms](https://docs.netlify.com/manage/forms/spam-filters/)
+- [Notifications Netlify Forms](https://docs.netlify.com/manage/forms/notifications/)
+- [Usage et facturation de Netlify Forms](https://docs.netlify.com/manage/forms/usage-and-billing/)
+- [Fonctionnement des crédits Netlify](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/how-credits-work/)
 - [Tarifs Supabase](https://supabase.com/pricing)
 - [Guide Next.js et Supabase Auth](https://supabase.com/docs/guides/auth/quickstarts/nextjs)
 - [Règles d'utilisation de Vercel Hobby](https://vercel.com/docs/limits/fair-use-guidelines)

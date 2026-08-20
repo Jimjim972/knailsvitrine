@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactForm } from "@/components/contact-form";
 import { PageHeading } from "@/components/page-heading";
+import { CONTACT_ADDRESS, CONTACT_OPENING_HOURS } from "@/lib/contact-details";
 
 export const metadata: Metadata = {
   title: "Contact & Rendez-vous",
@@ -29,7 +30,7 @@ export default function ContactPage() {
               <span className="info-icon" aria-hidden="true">⌖</span>
               <div>
                 <h3>Adresse</h3>
-                <p>123 Avenue Beauté, 75008 Paris</p>
+                <p>{CONTACT_ADDRESS}</p>
               </div>
             </div>
             <div className="info-row">
@@ -43,15 +44,20 @@ export default function ContactPage() {
               <span className="info-icon" aria-hidden="true">◷</span>
               <div>
                 <h3>Horaires</h3>
-                <p>Lun – Ven : 9h00 – 19h00</p>
-                <p>Samedi : 10h00 – 18h00</p>
-                <p>Dimanche : fermé</p>
+                {CONTACT_OPENING_HOURS.map(({ days, hours }) => (
+                  <p key={days}>{days} : {hours}</p>
+                ))}
               </div>
             </div>
           </section>
 
           <div className="map-card">
-            <Image src="/images/map-paris.jpg" alt="Plan stylisé de Paris" fill sizes="(max-width: 768px) 100vw, 40vw" />
+            <Image
+              src="/images/map-saint-joseph.webp"
+              alt="Plan stylisé de Saint-Joseph en Martinique"
+              fill
+              sizes="(max-width: 768px) 100vw, 40vw"
+            />
             <span className="map-tint" />
           </div>
         </aside>

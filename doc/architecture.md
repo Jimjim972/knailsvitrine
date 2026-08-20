@@ -12,6 +12,8 @@ Application Next.js sur Netlify
    |-- pages publiques
    |-- espace /admin protégé
    |-- composants serveur et actions serveur
+   |-- garde Edge des POST du formulaire de contact
+   `-- définition HTML statique détectée par Netlify Forms
    |
    v
 Supabase
@@ -183,6 +185,20 @@ Les routes Prestations et Galerie administratives ne seront ajoutées à cette s
 4. Le navigateur demande `/api/gallery-images/<id>` ; la Route Handler relit l'état courant et télécharge l'objet privé sous RLS.
 5. La réponse transmet l'image sans réencodage avec `Cache-Control: private, no-store`, sans révéler le chemin Storage.
 6. Côté navigateur, les deux premières images sont montées après hydratation ; les suivantes attendent le premier défilement puis un `IntersectionObserver` à marge de 800 px, afin d'éviter les doubles requêtes et de borner le coût initial.
+
+### Envoi d'une demande de contact
+
+1. Le build publie `public/__forms.html`, définition statique du formulaire `contact` requise pour sa détection par Netlify/OpenNext. Elle déclare les quatre champs visibles, le honeypot `bot-field` et un `submission-id` opaque.
+2. Le Client Component conserve les valeurs brutes, applique le schéma Zod partagé sur un instantané uniquement débarrassé de ses espaces périphériques, verrouille immédiatement une tentative valide et invoque une Server Action avec `useActionState`. La requête applicative ne contient pas `form-name`.
+3. La Server Action revalide les champs et l'UUID avec le même schéma, puis retourne soit des erreurs fermées, soit un instantané normalisé autorisé. Elle ne contacte pas Netlify, n'accepte aucune origine fournie par l'appelant et ne journalise aucune valeur.
+4. Après autorisation, le navigateur ajoute `form-name=contact` et envoie l'instantané en `application/x-www-form-urlencoded` vers le chemin relatif constant `/__forms.html`, avec les credentials omis. Le `fetch` navigateur expire exactement après 10 secondes ; une seule action et un seul POST fournisseur sont actifs côté interface.
+5. Une Netlify Edge Function attachée à toutes les requêtes POST laisse d'abord intacte, sans lecture ni clonage, toute requête portant l'en-tête interne `Next-Action`, afin de préserver le flux multipart du framework. Elle inspecte ensuite une copie des autres corps et transmet sans changement ceux qui ne déclarent pas `form-name=contact`. Pour `contact`, elle laisse le honeypot rempli atteindre le rejet silencieux natif, refuse en 422 toute donnée visible invalide, puis reconstruit une requête normalisée avant de poursuivre la chaîne Netlify.
+6. Netlify Forms applique son honeypot et Akismet, puis sépare les soumissions vérifiées et indésirables dans son interface. Une soumission vérifiée déclenche la notification configurée vers l'adresse opérationnelle de l'institut ; le champ `email` devient le `Reply-To`. Aucun message n'est copié dans Supabase ou `/admin`, et aucune autoréponse n'est envoyée au visiteur.
+7. Le client transforme uniquement un HTTP 2xx reçu après l'autorisation serveur en état de succès contrôlé. L'interface peut alors annoncer que le message a été envoyé et vider les champs, sans prétendre connaître le classement final Verified/Spam. Un statut non positif, une erreur réseau ou l'expiration des 10 secondes préserve les quatre valeurs.
+
+Le même `submission-id` est réutilisé après une issue réseau ambiguë afin de corréler un doublon éventuel. Il ne constitue pas une clé d'idempotence : Netlify Forms ne documente pas une garantie de livraison exactement une fois. Un jeton local monotone empêche une réponse tardive d'écraser l'état d'une tentative plus récente.
+
+Les chaînes Server Action d'autorisation → POST AJAX → Edge → Forms et POST direct → Edge → Forms sont des gates de Deploy Preview. Une validation locale seule ne prouve ni la détection du blueprint, ni la réception ou le classement anti-spam.
 
 ### Modification d'une prestation
 

@@ -346,6 +346,8 @@ Le message de succès actuel est uniquement simulé. Le design final doit prévo
 - succès réel ;
 - erreur avec action possible.
 
+Le formulaire fonctionnel conserve strictement les quatre libellés visibles. Le téléphone affiche la mention « facultatif » et chaque champ expose une aide persistante avec sa borne et un compteur non bloquant : aucune valeur n'est tronquée par `maxLength`. Les erreurs françaises apparaissent directement sous le champ, avec texte et couleur, tandis qu'une seule région live annonce le résumé, l'attente, le succès ou l'échec. Pendant l'envoi, les champs deviennent temporairement en lecture seule et le bouton pleine largeur est indisponible. Les panneaux utilisent `--status-info-*`, `--status-success-*` et `--status-error-*` ; les contrôles conservent au moins 44 px et un anneau `:focus-visible` de 3 px en `--gold`. Le champ leurre anti-spam est entièrement masqué et absent du parcours clavier et accessible.
+
 ### 8.9 Informations pratiques et carte
 
 La carte d'informations utilise une surface blanche, une bordure dorée légère et l'ombre générique. Chaque information est organisée en deux colonnes : symbole puis contenu.
@@ -356,7 +358,7 @@ La carte géographique actuelle est une image statique teintée prune. Une futur
 
 Le footer repose sur un fond gris doux et une grille de quatre colonnes : marque, exploration, contact et horaires. La grille passe à deux colonnes sous 1080 px puis à une colonne sous 760 px.
 
-Les liens sont soulignés d'un trait doré transparent et deviennent dorés au survol. Le copyright est séparé par une bordure supérieure.
+Les liens sont soulignés d'un trait doré transparent et deviennent dorés au survol. Le copyright est séparé par une bordure supérieure et utilise `--muted` sans transparence afin de conserver un contraste AA sur le fond gris doux.
 
 ## 9. Mouvement et interactions
 
@@ -546,10 +548,7 @@ Les éléments suivants appartiennent au prototype et ne doivent pas être consi
 - le formulaire Contact affiche actuellement un faux succès sans envoyer de message ;
 - le lien Instagram pointe vers la page générique `instagram.com` ;
 - le compte `@knails_institut` doit être confirmé ;
-- l'adresse de la page Contact et celle du footer sont formulées différemment ;
-- les horaires de la page Contact et ceux du footer se contredisent ;
 - le téléphone est une valeur de démonstration ;
-- `map-paris.jpg` et les références à Paris doivent être remplacés si l'institut se situe ailleurs ;
 - la racine `/` redirige directement vers `/services` et ne possède pas de page d'accueil dédiée ;
 - le CTA « Réserver » mène vers le contact et non vers une réservation en ligne ;
 - certaines légendes de galerie sont révélées uniquement au survol sur ordinateur ; leur accessibilité clavier doit être améliorée ;

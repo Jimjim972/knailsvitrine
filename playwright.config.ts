@@ -1,17 +1,27 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const contactMode =
+  process.env.KN_PLAYWRIGHT_SUITE === "contact" ||
+  process.env.npm_lifecycle_event === "test:e2e:contact";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? (contactMode ? "http://127.0.0.1:8888" : "http://127.0.0.1:3000");
 const serverUrl = new URL(baseURL);
 const serverPort = serverUrl.port || (serverUrl.protocol === "https:" ? "443" : "80");
+const webServerCommand = contactMode
+  ? process.env.PLAYWRIGHT_BASE_URL
+    ? `npm run start -- -p ${serverPort}`
+    : process.env.KN_CONTACT_WEB_SERVER_COMMAND ?? "npm run contact:dev"
+  : `npm run start -- -p ${serverPort}`;
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: ["admin-auth/**/*.spec.ts", "services-management/**/*.spec.ts", "gallery-management/**/*.spec.ts"],
+  testMatch: contactMode
+    ? ["contact-form/**/*.spec.ts"]
+    : ["admin-auth/**/*.spec.ts", "services-management/**/*.spec.ts", "gallery-management/**/*.spec.ts"],
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["line"], ["html", { open: "never" }]] : "line",
-  globalSetup: "./tests/admin-auth/global-setup.ts",
+  globalSetup: contactMode ? undefined : "./tests/admin-auth/global-setup.ts",
   use: {
     baseURL,
     trace: "retain-on-failure",
@@ -35,9 +45,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run start -- -p ${serverPort}`,
+    command: webServerCommand,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env.CI && !process.env.PLAYWRIGHT_BASE_URL,
     timeout: 120_000,
   },
 });
