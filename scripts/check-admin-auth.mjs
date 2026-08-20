@@ -42,8 +42,9 @@ function assertLocalRuntime() {
     throw new Error("Only an exact HTTP loopback Supabase target is allowed");
   }
   const publishableKey = status.PUBLISHABLE_KEY ?? status.ANON_KEY;
-  if (!publishableKey) throw new Error("The local publishable capability is unavailable");
-  return { apiUrl: url.origin, publishableKey };
+  const serviceRoleKey = status.SERVICE_ROLE_KEY;
+  if (!publishableKey || !serviceRoleKey) throw new Error("The local test capabilities are unavailable");
+  return { apiUrl: url.origin, publishableKey, serviceRoleKey };
 }
 
 function runCheck(checkId, summary, command, args, env, category = "internal") {
@@ -77,6 +78,11 @@ if (runtime) {
     NEXT_PUBLIC_SUPABASE_URL: runtime.apiUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: runtime.publishableKey,
   };
+  const localFixtureEnv = {
+    KN_LOCAL_SUPABASE_API_URL: runtime.apiUrl,
+    KN_LOCAL_SUPABASE_PUBLISHABLE_KEY: runtime.publishableKey,
+    KN_LOCAL_SUPABASE_SERVICE_ROLE_KEY: runtime.serviceRoleKey,
+  };
   runCheck(
     "authorization.auth.database",
     "Admin RPC, grants, current role and current-session pgTAP matrix",
@@ -108,7 +114,7 @@ if (runtime) {
       "Chromium/WebKit Auth, accessibility, responsive and public-regression matrix",
       "npm",
       ["run", "test:e2e:auth"],
-      { ...publicEnv, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3100" },
+      { ...publicEnv, ...localFixtureEnv, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3100" },
       "authorization",
     );
     runCheck(

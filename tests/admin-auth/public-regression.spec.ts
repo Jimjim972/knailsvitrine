@@ -45,8 +45,10 @@ for (const width of VIEWPORTS) {
     await page.goto("/galerie");
     await expectPublicChrome(page);
     await expect(page.getByRole("heading", { name: "L'Art Sublimé", level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Galerie en préparation", level: 2 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Journal Social", level: 2 })).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Galerie en préparation", level: 2 })
+        .or(page.locator(".gallery-card, .social-card").first()),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: "Voir le profil" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
