@@ -64,6 +64,11 @@ test("le SEO local vérifie le contexte fermé sans valider à tort Schema.org e
   assert.equal(seo?.requirementIds.includes("SC-004"), false);
 });
 
+test("Foundation délègue la Galerie à l'unique sous-gate orchestré", () => {
+  const foundation = PROFILE_COMMANDS.local.find((definition) => definition.id === "foundation");
+  assert.equal(foundation?.env?.KN_PRODUCTION_READINESS_ORCHESTRATOR, "true");
+});
+
 test("un changement de SHA et une sortie de commande invalide sont refusés", () => {
   assert.throws(() => assertFrozenSha(SHA, "d".repeat(40)), /candidate_sha_changed/);
   assert.throws(() => validateCommandResult({ exitCode: "0" }), /invalid_command_output/);

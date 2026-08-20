@@ -328,7 +328,9 @@ async function main() {
   results.push(buildResult);
   if (buildResult.status === "pass") {
     results.push(secretScanResult());
-    results.push(...structuredResults(process.execPath, ["scripts/check-gallery-management.mjs"]));
+    if (process.env.KN_PRODUCTION_READINESS_ORCHESTRATOR !== "true") {
+      results.push(...structuredResults(process.execPath, ["scripts/check-gallery-management.mjs"]));
+    }
   }
 
   emit(results);
