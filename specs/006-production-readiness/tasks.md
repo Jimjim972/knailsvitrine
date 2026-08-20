@@ -102,10 +102,10 @@
 - [X] T034 [US2] Implémenter l'orchestrateur sécurité local/preview/production non destructive dans `scripts/check-production-security.mjs`
 - [X] T035 [US2] Ajouter `supabase:test:production-security`, `security:hosted-check` et `security:check` dans `package.json`
 - [X] T036 [US2] Exécuter la matrice locale complète et enregistrer les résultats structurés expurgés dans `test-results/production-readiness/<sha>/commands/security-local.jsonl`
-- [ ] T037 [US2] Après validation de T021 et autorisation explicite, exécuter la matrice mutable avec fixtures UUID sur la preview isolée et consigner le nettoyage dans `test-results/production-readiness/<sha>/manual/security-preview.md`
+- [X] T037 [US2] Après validation de T021 et autorisation explicite, exécuter la matrice mutable avec fixtures UUID sur la preview isolée et consigner le nettoyage dans `test-results/production-readiness/<sha>/manual/security-preview.md`
 - [ ] T038 [US2] Vérifier puis, seulement après autorisation, fermer les modes d'inscription hébergés et prouver le refus canari sans compte résiduel dans `test-results/production-readiness/<sha>/manual/hosted-auth.md`
-- [ ] T039 [US2] Examiner advisors, SSL Enforcement et Network Restrictions de production en lecture seule et consigner chaque warning ou acceptation bornée dans `test-results/production-readiness/<sha>/manual/supabase-platform.md`
-- [ ] T040 [US2] Synchroniser dans le même changement les exigences, responsabilités de sécurité, gates local/preview/production et procédures de maintenance dans `doc/spec.md`, `doc/architecture.md` et `doc/infra.md`
+- [X] T039 [US2] Examiner advisors, SSL Enforcement et Network Restrictions de production en lecture seule et consigner chaque warning ou acceptation bornée dans `test-results/production-readiness/<sha>/manual/supabase-platform.md`
+- [X] T040 [US2] Synchroniser dans le même changement les exigences, responsabilités de sécurité, gates local/preview/production et procédures de maintenance dans `doc/spec.md`, `doc/architecture.md` et `doc/infra.md`
 
 **Checkpoint**: US2 prouve séparément qu'aucun rôle non autorisé ne peut lire ou muter les contenus protégés et qu'aucun secret n'est publié.
 

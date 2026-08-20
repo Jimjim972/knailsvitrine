@@ -595,6 +595,14 @@ Les scénarios suivants doivent être exécutés avec les rôles réels :
 
 La fondation Supabase vérifie séparément les droits de suppression de la ligne et du fichier. Le workflow applicatif de galerie coordonne désormais les deux ressources par une opération durable, un masquage préalable et une reprise idempotente des échecs partiels ; le scénario 7 en reste le critère de validation.
 
+La préparation à la production sépare obligatoirement trois gates :
+
+- la pile locale exécute les contrats SQL, Auth et Storage reproductibles ;
+- une Deploy Preview liée au SHA exécute, après garde de cible et autorisation explicite, une matrice mutable avec sessions anon, authentifiée non-admin et admin réelles ; les UUID, objets et identités de test sont tous supprimés et leur absence est relue avant succès ;
+- la production reçoit uniquement l'inventaire en lecture seule des GRANT, RLS, politiques, Auth, advisors, SSL et restrictions réseau tant qu'une mutation n'a pas été autorisée séparément.
+
+La clé secrète temporairement obtenue pour une recette preview sert exclusivement à créer et supprimer les identités de fixture. Les assertions d'autorisation utilisent la clé publiable et les sessions réelles ; les lignes de test sont préparées par l'administrateur courant et nettoyées par la capacité de maintenance, jamais par un contournement utilisé comme preuve RLS. Tout échec de nettoyage, warning advisor, inscription ouverte, SSL base désactivé ou clé legacy compromise maintient la décision `not_ready`.
+
 ### 15.3 Vérifications fonctionnelles
 
 - affichage correct des trois catégories initiales et de toute nouvelle catégorie contenant une prestation active ;

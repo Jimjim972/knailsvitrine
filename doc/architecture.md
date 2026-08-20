@@ -141,6 +141,14 @@ Les clients Supabase sont séparés sous `lib/supabase/` : validation publique p
 
 Une perte de session, une révocation ou un retrait du rôle pendant un parcours renvoie vers la connexion avec un motif fermé `session=expired` et une consigne de reconnexion, sans préciser l'identité ni la cause interne. Les mutations déjà ouvertes sont réautorisées au POST et restent sur le formulaire avec le même état sûr lorsqu'elles sont refusées.
 
+## Architecture des gates de sécurité de production
+
+`scripts/check-deploy-target.mjs` lie chaque contrôle distant au SHA, au contexte Netlify, à l'origine et à la référence Supabase attendus. `scripts/check-hosted-supabase-security.mjs` inspecte les privilèges effectifs avec `has_table_privilege`, séparément des politiques RLS, puis lit Auth, bucket, advisors, SSL et restrictions réseau sans mutation. `scripts/check-preview-security.mjs` est le seul runner mutable hébergé : il exige `deploy_preview`, un projet différent de la production et `MUTATION_AUTHORIZED=true`.
+
+Le runner preview crée des identités UUID jetables par la clé secrète de maintenance obtenue au moment du test, puis toutes les preuves CRUD, RPC et Storage utilisent la clé publiable et des sessions anon, membre ou admin réelles. Le nettoyage des objets passe par Storage, celui des lignes par une requête de maintenance bornée aux UUID produits, et celui des identités par Auth Admin. Les trois inventaires sont relus avant de produire `security-preview.md` et `hosted-auth.md`. La clé élevée, les mots de passe, e-mails, JWT, chemins Storage et contenus ne sont jamais écrits dans une preuve.
+
+La migration `production_security_hardening` remplace les deux politiques SELECT permissives superposées de `photos_galerie` par une politique anon active/`ready` et une politique authenticated unique qui réunit projection publique et autorité admin courante. La production reste auditée en lecture seule jusqu'à une autorisation distincte ; un warning ou une configuration non conforme bloque la promotion au lieu d'être corrigé implicitement.
+
 ## Organisation Next.js actuelle pour l'authentification
 
 ```text
