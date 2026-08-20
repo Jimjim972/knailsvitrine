@@ -45,6 +45,18 @@ test("chaque commande est appelée exactement une fois et un échec reste visibl
   assert.equal(result.report.evidence.find((item) => item.evidenceId === "COMMAND-SEO")?.status, "failed");
 });
 
+test("un échec qualité, typecheck, build ou unitaire reste un gate obligatoire du rapport", () => {
+  for (const failingId of ["quality", "typecheck", "build", "unit", "unit-contact"]) {
+    const result = runReadinessOrchestrator({
+      profile: "local",
+      candidate,
+      runner: (definition) => definition.id === failingId ? { ...passedResult, exitCode: 1 } : passedResult,
+    });
+    assert.equal(result.report.evidence.find((item) => item.evidenceId === `COMMAND-${failingId.toUpperCase()}`)?.status, "failed");
+    assert.equal(result.report.promotionDecision, "not_approved");
+  }
+});
+
 test("un changement de SHA et une sortie de commande invalide sont refusés", () => {
   assert.throws(() => assertFrozenSha(SHA, "d".repeat(40)), /candidate_sha_changed/);
   assert.throws(() => validateCommandResult({ exitCode: "0" }), /invalid_command_output/);

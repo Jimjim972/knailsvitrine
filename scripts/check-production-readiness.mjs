@@ -23,10 +23,10 @@ const RANGE = (prefix, first, last) => Array.from(
 export const PROFILE_COMMANDS = Object.freeze({
   local: [
     { id: "quality", command: "npm", args: ["run", "lint"], requirementIds: ["FR-045", "SC-009"] },
-    { id: "typecheck", command: "npm", args: ["run", "typecheck"], requirementIds: [] },
-    { id: "build", command: "npm", args: ["run", "build"], requirementIds: [] },
-    { id: "unit", command: "npm", args: ["run", "test:unit"], requirementIds: [] },
-    { id: "unit-contact", command: "npm", args: ["run", "test:unit:contact"], requirementIds: [] },
+    { id: "typecheck", command: "npm", args: ["run", "typecheck"], requirementIds: ["FR-045", "SC-009"] },
+    { id: "build", command: "npm", args: ["run", "build"], requirementIds: ["FR-045", "SC-009"] },
+    { id: "unit", command: "npm", args: ["run", "test:unit"], requirementIds: ["FR-045", "SC-009"] },
+    { id: "unit-contact", command: "npm", args: ["run", "test:unit:contact"], requirementIds: ["FR-045", "FR-050", "SC-009", "SC-011"] },
     { id: "foundation", command: "npm", args: ["run", "foundation:check"], requirementIds: FEATURE_REQUIREMENTS("001", 10) },
     { id: "auth", command: "npm", args: ["run", "auth:check"], requirementIds: FEATURE_REQUIREMENTS("002", 10) },
     { id: "services", command: "npm", args: ["run", "services:check"], requirementIds: [...FEATURE_REQUIREMENTS("003", 16), "FR-048"] },
