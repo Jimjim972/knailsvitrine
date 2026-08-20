@@ -498,11 +498,14 @@ La configuration ponctuelle du bucket galerie constitue un cas distinct du runti
 
 ### 12.3 Référencement
 
-- métadonnées uniques pour les pages principales ;
-- titres et descriptions cohérents avec l'activité réelle ;
-- sitemap et robots configurés ;
-- balises Open Graph pour le partage ;
-- données structurées de type entreprise locale lorsque l'adresse, le téléphone et les horaires définitifs seront connus ;
+- `/services`, `/galerie` et `/contact` possèdent chacune un titre, une description, un canonical absolu et un Open Graph uniques ;
+- l'unique origine SEO est `https://knailsbeauty.fr`, indépendamment de l'hôte entrant, de `www`, du `.com` ou d'une Deploy Preview ;
+- en production canonique, le sitemap contient exactement ces trois pages et `robots.txt` autorise le public, exclut `/admin` et référence le sitemap ;
+- hors production, toutes les pages sont `noindex, nofollow`, `robots.txt` refuse toute exploration et le sitemap ne contient aucune URL ;
+- l'administration, connexion comprise, reste `noindex, nofollow` dans tous les contextes et n'expose aucun canonical ;
+- l'image Open Graph finale mesure 1 200 × 630 px et n'affiche aucune coordonnée non confirmée ;
+- le JSON-LD `BeautySalon` contient uniquement le nom, l'URL canonique, l'adresse et les horaires confirmés visibles ; aucun téléphone, réseau ou image n'est publié avant confirmation ;
+- la syntaxe et la cohérence sont contrôlées localement, puis le document hébergé est soumis au validateur public Schema.org avec zéro erreur ; un résultat externe indisponible ou inclassable reste bloquant ;
 - contenu principal rendu côté serveur afin d'être lisible sans exécution JavaScript côté client.
 
 ### 12.4 Responsive

@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Manrope, Playfair_Display } from "next/font/google";
 import type { ReactNode } from "react";
+import { buildRootMetadata } from "@/lib/site/metadata";
+import {
+  LOCAL_BUSINESS_STRUCTURED_DATA,
+  serializeStructuredData,
+} from "@/lib/site/structured-data";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -15,19 +20,18 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "K'nails Beauty Institut",
-    template: "%s | K'nails Beauty Institut",
-  },
-  description:
-    "Institut de beauté et onglerie : manucure, soins du corps et soins du visage.",
-};
+export const metadata: Metadata = buildRootMetadata();
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="fr" className={`${manrope.variable} ${playfair.variable}`}>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeStructuredData(LOCAL_BUSINESS_STRUCTURED_DATA),
+          }}
+        />
         {children}
       </body>
     </html>

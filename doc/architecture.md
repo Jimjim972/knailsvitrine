@@ -149,6 +149,14 @@ Le runner preview crée des identités UUID jetables par la clé secrète de mai
 
 La migration `production_security_hardening` remplace les deux politiques SELECT permissives superposées de `photos_galerie` par une politique anon active/`ready` et une politique authenticated unique qui réunit projection publique et autorité admin courante. La production reste auditée en lecture seule jusqu'à une autorisation distincte ; un warning ou une configuration non conforme bloque la promotion au lieu d'être corrigé implicitement.
 
+## Métadonnées SEO et découverte
+
+`lib/site/metadata.ts` centralise l'origine canonique, les métadonnées globales et les trois profils de page. `app/layout.tsx` installe `metadataBase` et les métadonnées partagées ; chaque page publique fournit ensuite son titre, sa description, son canonical et son objet Open Graph complets afin d'éviter le remplacement superficiel des champs imbriqués par Next.js.
+
+`app/sitemap.ts` et `app/robots.ts` s'appuient sur `resolveDeploymentContext()` : seule une production Netlify valide et liée à l'origine canonique publie les trois URL indexables. Les previews, branch deploys, environnements locaux ou contextes indéterminés restent fermés aux robots et ne publient aucune URL dans le sitemap. Le layout `/admin`, connexion comprise, impose indépendamment `noindex, nofollow` et ne définit aucun canonical.
+
+`lib/site/structured-data.ts` produit un unique `BeautySalon` JSON-LD à partir des coordonnées confirmées et visibles de `lib/contact-details.ts`. `scripts/check-seo.mjs` vérifie les documents HTTP selon un profil local, preview ou production, puis soumet toute cible hébergée au validateur public Schema.org ; un résultat absent, inaccessible ou inclassable bloque la validation au lieu d'être assimilé à un succès.
+
 ## Organisation Next.js actuelle pour l'authentification
 
 ```text

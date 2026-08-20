@@ -103,7 +103,7 @@
 - [X] T035 [US2] Ajouter `supabase:test:production-security`, `security:hosted-check` et `security:check` dans `package.json`
 - [X] T036 [US2] Exécuter la matrice locale complète et enregistrer les résultats structurés expurgés dans `test-results/production-readiness/<sha>/commands/security-local.jsonl`
 - [X] T037 [US2] Après validation de T021 et autorisation explicite, exécuter la matrice mutable avec fixtures UUID sur la preview isolée et consigner le nettoyage dans `test-results/production-readiness/<sha>/manual/security-preview.md`
-- [ ] T038 [US2] Vérifier puis, seulement après autorisation, fermer les modes d'inscription hébergés et prouver le refus canari sans compte résiduel dans `test-results/production-readiness/<sha>/manual/hosted-auth.md`
+- [X] T038 [US2] Vérifier puis, seulement après autorisation, fermer les modes d'inscription hébergés et prouver le refus canari sans compte résiduel dans `test-results/production-readiness/<sha>/manual/hosted-auth.md`
 - [X] T039 [US2] Examiner advisors, SSL Enforcement et Network Restrictions de production en lecture seule et consigner chaque warning ou acceptation bornée dans `test-results/production-readiness/<sha>/manual/supabase-platform.md`
 - [X] T040 [US2] Synchroniser dans le même changement les exigences, responsabilités de sécurité, gates local/preview/production et procédures de maintenance dans `doc/spec.md`, `doc/architecture.md` et `doc/infra.md`
 
@@ -119,19 +119,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T041 [P] [US3] Écrire les tests purs d'origine, metadataBase, canonicals, Open Graph, sitemap et robots par contexte dans `tests/unit/production-readiness/metadata.test.ts`
-- [ ] T042 [P] [US3] Écrire les scénarios navigateur profil production/preview/admin, validation JSON-LD locale et résultat externe Schema.org réussi/bloqué dans `tests/production-readiness/seo.spec.ts`
+- [X] T041 [P] [US3] Écrire les tests purs d'origine, metadataBase, canonicals, Open Graph, sitemap et robots par contexte dans `tests/unit/production-readiness/metadata.test.ts`
+- [X] T042 [P] [US3] Écrire les scénarios navigateur profil production/preview/admin, validation JSON-LD locale et résultat externe Schema.org réussi/bloqué dans `tests/production-readiness/seo.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T043 [US3] Implémenter le constructeur partagé des titres, descriptions, canonicals, Open Graph et robots de page dans `lib/site/metadata.ts`
-- [ ] T044 [US3] Ajouter `metadataBase`, métadonnées globales et canonicals uniques dans `app/layout.tsx`, `app/(public)/services/page.tsx`, `app/(public)/galerie/page.tsx` et `app/(public)/contact/page.tsx`
-- [ ] T045 [P] [US3] Publier le sitemap exact production et vide hors production dans `app/sitemap.ts`
-- [ ] T046 [P] [US3] Publier les directives production/preview et la référence de sitemap dans `app/robots.ts`
-- [ ] T047 [P] [US3] Ajouter `noindex, nofollow` à la connexion et aux pages protégées dans `app/(admin)/admin/layout.tsx`
-- [ ] T048 [US3] Centraliser les coordonnées confirmées, retirer le téléphone fictif visible et produire le JSON-LD BeautySalon/LocalBusiness dans `lib/contact-details.ts`, `lib/site/structured-data.ts`, `app/layout.tsx` et `app/(public)/contact/page.tsx`
-- [ ] T049 [US3] Créer l'asset social final 1 200 × 630 conforme aux tokens et assets validés dans `app/opengraph-image.png`, puis documenter son usage et son alt dans `doc/design.md`
-- [ ] T050 [US3] Implémenter le contrôle SEO local/preview/production, y compris la validation publique Schema.org fail-closed, dans `scripts/check-seo.mjs`, ajouter `seo:check` dans `package.json` et synchroniser exigences/modules dans `doc/spec.md` et `doc/architecture.md` dans le même changement
+- [X] T043 [US3] Implémenter le constructeur partagé des titres, descriptions, canonicals, Open Graph et robots de page dans `lib/site/metadata.ts`
+- [X] T044 [US3] Ajouter `metadataBase`, métadonnées globales et canonicals uniques dans `app/layout.tsx`, `app/(public)/services/page.tsx`, `app/(public)/galerie/page.tsx` et `app/(public)/contact/page.tsx`
+- [X] T045 [P] [US3] Publier le sitemap exact production et vide hors production dans `app/sitemap.ts`
+- [X] T046 [P] [US3] Publier les directives production/preview et la référence de sitemap dans `app/robots.ts`
+- [X] T047 [P] [US3] Ajouter `noindex, nofollow` à la connexion et aux pages protégées dans `app/(admin)/admin/layout.tsx`
+- [X] T048 [US3] Centraliser les coordonnées confirmées, retirer le téléphone fictif visible et produire le JSON-LD BeautySalon/LocalBusiness dans `lib/contact-details.ts`, `lib/site/structured-data.ts`, `app/layout.tsx` et `app/(public)/contact/page.tsx`
+- [X] T049 [US3] Créer l'asset social final 1 200 × 630 conforme aux tokens et assets validés dans `app/opengraph-image.png`, puis documenter son usage et son alt dans `doc/design.md`
+- [X] T050 [US3] Implémenter le contrôle SEO local/preview/production, y compris la validation publique Schema.org fail-closed, dans `scripts/check-seo.mjs`, ajouter `seo:check` dans `package.json` et synchroniser exigences/modules dans `doc/spec.md` et `doc/architecture.md` dans le même changement
 - [ ] T051 [US3] Valider avant promotion les trois pages, robots, sitemap, JSON-LD, résultat Schema.org et aperçu social sur un build local/CI en contexte production simulé puis sur Deploy Preview en contexte preview réel, avec preuves expurgées dans `test-results/production-readiness/<sha>/manual/seo-preview.md`; réserver les assertions sur le domaine canonique à la finalisation production
 
 **Checkpoint**: US3 est indépendamment validée au niveau candidat si les contextes simulé/réel sont conformes et si preview/admin restent non indexables ; Phase 8 répète ensuite ces assertions sur le domaine canonique sans modifier cette preuve candidate.

@@ -42,6 +42,8 @@
     "security:hosted-check": "node scripts/check-hosted-supabase-security.mjs",
     "security:preview-check": "node --experimental-strip-types scripts/check-preview-security.mjs",
     "security:check": "node scripts/check-production-security.mjs",
+    "seo:check": "node scripts/check-seo.mjs",
+    "test:e2e:seo": "KN_PLAYWRIGHT_SUITE=seo KN_PLAYWRIGHT_EXTERNAL_SERVER=true playwright test tests/production-readiness/seo.spec.ts",
     "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
   "dependencies": {
