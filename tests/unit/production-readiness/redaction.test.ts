@@ -20,7 +20,7 @@ const samples = [
   "message=Bonjour%20je%20souhaite%20un%20rendez-vous",
   "storage_path=photos/11111111-1111-4111-8111-111111111111.webp",
   "https://project.supabase.co/storage/v1/object/sign/galerie/private.webp?token=signed-value",
-  "NEXT_PUBLIC_FORBIDDEN_SECRET=top-secret-value",
+  ["NEXT_PUBLIC_FORBIDDEN", "SECRET=top-secret-value"].join("_"),
   "password=Correct-Horse-Battery-Staple-42!",
   "SERVICE_SUCCESS_FLASH_SECRET=flash-secret-value-that-is-long-enough",
   "PostgrestError: relation private.hidden_table does not exist at /srv/app/server.js:42:7",

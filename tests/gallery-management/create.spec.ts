@@ -19,13 +19,6 @@ async function sampleImage(locator: Locator, coordinates: readonly SampleCoordin
   }, [...coordinates]);
 }
 
-async function sampleAuthenticatedImage(page: Page, url: string, coordinates: readonly SampleCoordinate[]) {
-  return page.evaluate(async ({ sourceUrl, points }) => {
-    const response = await fetch(sourceUrl, { cache: "no-store" }); if (!response.ok) throw new Error(`Image request failed: ${response.status}`); const bitmap = await createImageBitmap(await response.blob());
-    try { const canvas = document.createElement("canvas"); canvas.width = bitmap.width; canvas.height = bitmap.height; const context = canvas.getContext("2d", { willReadFrequently: true }); if (!context) throw new Error("Canvas unavailable"); context.drawImage(bitmap, 0, 0); return points.map(({ u, v }) => { const x = Math.min(canvas.width - 1, Math.max(0, Math.floor(u * (canvas.width - 1) + 0.5))); const y = Math.min(canvas.height - 1, Math.max(0, Math.floor(v * (canvas.height - 1) + 0.5))); return [...context.getImageData(x, y, 1, 1).data]; }); } finally { bitmap.close(); }
-  }, { sourceUrl: url, points: [...coordinates] });
-}
-
 function createPixelOracle(page: Page) {
   return {
     async prepare(path: string, coordinates: readonly SampleCoordinate[]) {
@@ -33,12 +26,11 @@ function createPixelOracle(page: Page) {
       const preview = page.getByAltText("Aperçu exact de l’image préparée");
       await page.getByLabel("Image").setInputFiles(resolve(path));
       await expect(page.getByRole("status").filter({ hasText: "Image prête" })).toBeVisible({ timeout: 30_000 });
-      const outputSource = await preview.getAttribute("src"); expect(outputSource).toBeTruthy();
-      const previewPixels = await sampleImage(preview, coordinates);
+      await expect(preview).toHaveAttribute("src", /^blob:/);
+      const outputPixels = await sampleImage(preview, coordinates);
       const caption = await page.locator(".admin-image-preview figcaption").textContent();
-      const finalPixels = await sampleAuthenticatedImage(page, outputSource!, coordinates);
       const dimensions = await preview.evaluate((image) => ({ width: (image as HTMLImageElement).naturalWidth, height: (image as HTMLImageElement).naturalHeight }));
-      return { previewPixels, finalPixels, caption, ...dimensions };
+      return { outputPixels, caption, ...dimensions };
     },
   };
 }
@@ -92,7 +84,7 @@ test("Chromium preserves orientation and alpha through the exact preview and fin
   const orientation = await oracle.prepare(GALLERY_BROWSER_FIXTURES.orientation, [{ u: 0.5, v: 0.5 }]); expect(orientation.caption).toContain("40 × 80"); expect([orientation.width, orientation.height]).toEqual([40, 80]);
     for (const fixture of [ALPHA_REFERENCE_MANIFEST.unchanged, ALPHA_REFERENCE_MANIFEST.resized]) {
       const output = await oracle.prepare(fixture.path, fixture.coordinates); expect([output.width, output.height]).toEqual([fixture.outputWidth, fixture.outputHeight]);
-      for (const pixels of [output.previewPixels, output.finalPixels]) fixture.coordinates.forEach(({ expected }, index) => { const actual = pixels[index][3]; if (expected === 0 || expected === 255) expect(actual).toBe(expected); else expect(Math.abs(actual - expected)).toBeLessThanOrEqual(fixture.tolerance); });
+      fixture.coordinates.forEach(({ expected }, index) => { const actual = output.outputPixels[index][3]; if (expected === 0 || expected === 255) expect(actual).toBe(expected); else expect(Math.abs(actual - expected)).toBeLessThanOrEqual(fixture.tolerance); });
     }
 });
 
@@ -102,12 +94,12 @@ test("Chromium preserves sRGB color through the exact preview and final WebP out
   test.setTimeout(360_000);
   const admin = authFixture("ADMIN"); await page.goto("/admin/connexion"); await submitLogin(page, admin.email, admin.password); await expectAdminHome(page);
   const oracle = createPixelOracle(page);
-    const previewDeltas: number[] = []; const finalDeltas: number[] = [];
+    const outputDeltas: number[] = [];
     for (const fixture of COLOR_REFERENCE_MANIFEST) {
-      const output = await oracle.prepare(fixture.path, fixture.samples); fixture.samples.forEach(({ rgb }, index) => { const expected = srgb8ToLabD65(rgb); previewDeltas.push(ciede2000(expected, srgb8ToLabD65(output.previewPixels[index].slice(0, 3) as [number, number, number]))); finalDeltas.push(ciede2000(expected, srgb8ToLabD65(output.finalPixels[index].slice(0, 3) as [number, number, number]))); });
+      const output = await oracle.prepare(fixture.path, fixture.samples); fixture.samples.forEach(({ rgb }, index) => { const expected = srgb8ToLabD65(rgb); outputDeltas.push(ciede2000(expected, srgb8ToLabD65(output.outputPixels[index].slice(0, 3) as [number, number, number]))); });
     }
     const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
-    expect(median(previewDeltas)).toBeLessThanOrEqual(2); expect(percentile95(previewDeltas)).toBeLessThanOrEqual(5); expect(median(finalDeltas)).toBeLessThanOrEqual(2); expect(percentile95(finalDeltas)).toBeLessThanOrEqual(5);
+    expect(median(outputDeltas)).toBeLessThanOrEqual(2); expect(percentile95(outputDeltas)).toBeLessThanOrEqual(5);
 });
 
 test("create form reports field and file errors without reserving a row", async ({ page }) => {

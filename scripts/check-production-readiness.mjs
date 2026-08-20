@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { buildReadinessReport, summarizeCoverageBySource } from "../lib/production-readiness/report.ts";
 import { createRequirementManifest } from "../lib/production-readiness/requirements.ts";

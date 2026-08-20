@@ -224,11 +224,23 @@ test("Galerie expose les états pending, réparation et pagination", async ({
 
   await insertGalleryFixtures(client, rows);
   try {
+    const ordered = await client.from("photos_galerie").select("id")
+      .order("variante_affichage").order("ordre_affichage").order("created_at").order("id");
+    expect(ordered.error).toBeNull();
+    const pageFor = (id: string) => {
+      const index = ordered.data?.findIndex((row) => row.id === id) ?? -1;
+      expect(index).toBeGreaterThanOrEqual(0);
+      return Math.floor(index / 100) + 1;
+    };
+    const pendingPage = pageFor(rows.at(-2)!.id);
+    const repairPage = pageFor(rows.at(-1)!.id);
+
     await page.goto("/admin/connexion");
     await submitLogin(page, admin.email, admin.password);
     await expectAdminHome(page);
-    await page.goto("/admin/galerie?page=2");
+    await page.goto(`/admin/galerie?page=${pendingPage}`);
     await expect(page.locator('[data-file-state="pending"]')).toContainText("En attente");
+    if (repairPage !== pendingPage) await page.goto(`/admin/galerie?page=${repairPage}`);
     await expect(page.locator('[data-file-state="repair_required"]')).toContainText("À réparer");
     await expect(page.getByRole("navigation", { name: "Pagination de la galerie" })).toBeVisible();
     await expectPageContract(page);

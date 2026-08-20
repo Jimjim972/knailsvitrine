@@ -1,5 +1,12 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
 import { expectAccessibilityScans } from "../helpers/accessibility";
+import {
+  CONTACT_PREVIEW_FORM_NAME,
+  contactFormNameForNetlifyContext,
+} from "../../lib/contact/constants";
+
+const EXPECTED_FORM_NAME = contactFormNameForNetlifyContext(process.env.CONTEXT) ??
+  CONTACT_PREVIEW_FORM_NAME;
 
 const viewports = [
   { width: 320, height: 760 },
@@ -71,7 +78,7 @@ test("the human submission sends one empty honeypot without exposing form-name i
   await expect(form.locator('input[name="bot-field"]')).toHaveValue("");
   await expect(page.getByRole("status")).toHaveText("Merci, votre message a bien été envoyé.");
   expect(Object.fromEntries(new URLSearchParams(providerBody))).toMatchObject({
-    "form-name": "contact",
+    "form-name": EXPECTED_FORM_NAME,
     "bot-field": "",
   });
 });
