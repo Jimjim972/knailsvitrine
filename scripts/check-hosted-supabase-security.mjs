@@ -22,11 +22,19 @@ select jsonb_build_object(
       and (tablename in ('categories_prestations', 'photos_galerie', 'prestations') or tablename = 'objects')
   ), '[]'::jsonb),
   'grants', coalesce((
-    select jsonb_agg(jsonb_build_object('table', table_name, 'role', grantee, 'privilege', privilege_type) order by table_name, grantee, privilege_type)
-    from information_schema.role_table_grants
-    where table_schema = 'public'
-      and table_name in ('categories_prestations', 'photos_galerie', 'prestations')
-      and grantee in ('anon', 'authenticated')
+    select jsonb_agg(
+      jsonb_build_object(
+        'table', table_name,
+        'role', role_name,
+        'select', has_table_privilege(role_name, 'public.' || table_name, 'SELECT'),
+        'insert', has_table_privilege(role_name, 'public.' || table_name, 'INSERT'),
+        'update', has_table_privilege(role_name, 'public.' || table_name, 'UPDATE'),
+        'delete', has_table_privilege(role_name, 'public.' || table_name, 'DELETE')
+      )
+      order by table_name, role_name
+    )
+    from (values ('anon'), ('authenticated')) roles(role_name)
+    cross join (values ('categories_prestations'), ('photos_galerie'), ('prestations')) tables(table_name)
   ), '[]'::jsonb),
   'bucket', coalesce((
     select jsonb_build_object(
@@ -137,9 +145,20 @@ export async function auditHostedSupabaseSecurity({
   results.push(Array.isArray(inventory?.policies) && inventory.policies.length >= 12
     ? pass("security.hosted.policies", "Hosted public and Storage policies are inventoried")
     : fail("security.hosted.policies", "privilege", "Hosted policy inventory is incomplete"));
-  results.push(Array.isArray(inventory?.grants) && inventory.grants.length > 0
+  const grants = Array.isArray(inventory?.grants) ? inventory.grants : [];
+  const grantMatrixIsExact = grants.length === 6 && grants.every((entry) => {
+    if (entry.select !== true) return false;
+    if (entry.role === "anon") {
+      return entry.insert === false && entry.update === false && entry.delete === false;
+    }
+    return entry.role === "authenticated"
+      && entry.insert === true
+      && entry.update === true
+      && entry.delete === true;
+  });
+  results.push(grantMatrixIsExact
     ? pass("security.hosted.grants", "Hosted Data API grants are inventoried separately from RLS")
-    : fail("security.hosted.grants", "privilege", "Hosted Data API grants are unavailable"));
+    : fail("security.hosted.grants", "privilege", "Hosted Data API grants are incomplete or excessive"));
   const bucket = inventory?.bucket;
   results.push(bucket?.exists === true && bucket.public === false && bucket.fileSizeLimit === 8_388_608
     ? pass("security.hosted.bucket", "Hosted gallery bucket is private and bounded")

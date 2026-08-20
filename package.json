@@ -40,6 +40,7 @@
     "contact:check": "node scripts/check-contact-form.mjs",
     "production:target-check": "node --experimental-strip-types scripts/check-deploy-target.mjs",
     "security:hosted-check": "node scripts/check-hosted-supabase-security.mjs",
+    "security:preview-check": "node --experimental-strip-types scripts/check-preview-security.mjs",
     "security:check": "node scripts/check-production-security.mjs",
     "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
