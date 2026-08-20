@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { CONTACT_ADDRESS } from "../../lib/contact-details";
 import { authFixture, expectAdminHome, submitLogin } from "./fixtures";
 
 const VIEWPORTS = [320, 768, 1024] as const;
@@ -56,10 +57,8 @@ for (const width of VIEWPORTS) {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Envoyez-nous un message" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Informations pratiques" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "+33 1 23 45 67 89" }).first()).toHaveAttribute(
-      "href",
-      "tel:+33123456789",
-    );
+    await expect(page.getByText(CONTACT_ADDRESS, { exact: true }).first()).toBeVisible();
+    await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
 }

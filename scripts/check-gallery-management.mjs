@@ -21,7 +21,7 @@ if (env) {
   run("internal.gallery.bucket", "Private gallery bucket configured", "npm", ["run", "supabase:configure:gallery"]);
   run("authorization.gallery.database", "Gallery pgTAP and RLS matrix", "npm", ["run", "supabase:test:db"], "authorization");
   run("authorization.gallery.storage", "Gallery Storage matrix", "npm", ["run", "supabase:test:storage"], "authorization");
-  run("validation.gallery.bootstrap", "Nine deterministic gallery pairs", process.execPath, ["scripts/check-gallery-bootstrap.mjs"], "validation");
+  run("validation.gallery.bootstrap", "Nine deterministic gallery pairs", process.execPath, ["--experimental-strip-types", "scripts/check-gallery-bootstrap.mjs"], "validation");
   run("validation.gallery.unit", "Gallery unit contracts", "npm", ["run", "test:unit"], "validation");
   run("internal.gallery.lint", "ESLint", "npm", ["run", "lint"]); run("internal.gallery.typecheck", "TypeScript", "npm", ["run", "typecheck"]);
   rmSync(join(process.cwd(), ".next"), { recursive: true, force: true }); record("internal.gallery.clean_build", "pass", "Generated Next.js build cache cleared after bootstrap");
