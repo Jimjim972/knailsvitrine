@@ -56,19 +56,23 @@ function readHostedConfiguration() {
   return { origin: hostedOrigin(rawUrl, projectRef), key };
 }
 
-async function bucketRequest(origin, key, method = "GET", body) {
-  const response = await fetch(`${origin}/storage/v1/bucket/${BUCKET_ID}`, {
+async function bucketRequest(origin, key, method = "GET", body, allowMissing = false) {
+  const collectionRequest = method === "POST";
+  const response = await fetch(`${origin}/storage/v1/bucket${collectionRequest ? "" : `/${BUCKET_ID}`}`, {
     method,
     headers: {
       apikey: key,
-      Authorization: `Bearer ${key}`,
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`L’API Storage a refusé la configuration (${response.status}).`);
-  return response.status === 204 ? null : response.json();
+  const payload = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    if (allowMissing && [400, 404].includes(response.status) && payload?.message === "Bucket not found") return null;
+    throw new Error(`L’API Storage a refusé la configuration (${response.status}).`);
+  }
+  return payload;
 }
 
 function normalizedBucket(bucket) {
@@ -91,8 +95,10 @@ async function main() {
   const unknown = process.argv.slice(2).filter((argument) => argument !== "--local");
   if (unknown.length > 0) throw new Error("Option de configuration inconnue.");
   const { origin, key } = local ? readLocalConfiguration() : readHostedConfiguration();
-  const current = await bucketRequest(origin, key);
-  if (!matchesExpected(current)) {
+  const current = await bucketRequest(origin, key, "GET", undefined, true);
+  if (!current) {
+    await bucketRequest(origin, key, "POST", { id: BUCKET_ID, name: BUCKET_ID, ...EXPECTED });
+  } else if (!matchesExpected(current)) {
     await bucketRequest(origin, key, "PUT", EXPECTED);
   }
   const verified = await bucketRequest(origin, key);

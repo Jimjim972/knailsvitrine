@@ -75,3 +75,33 @@ test("requireAdminAction returns the authenticated subject only after strict aut
   assert.deepEqual(result.authorization, { authorized: true, userId: "admin-subject" });
   assert.equal(result.protectedWorkCalls, 1);
 });
+
+test("spoofed metadata, stale admin claims and revoked sessions all fail at current authority", async () => {
+  for (const scenario of ["user_metadata_spoof", "database_downgrade", "session_revoked"]) {
+    const result = await exerciseProtectedWork(
+      dependencies({
+        getClaims: async () => ({ subject: `subject-${scenario}`, error: null }),
+        isCurrentAdmin: async () => ({ data: false, error: null }),
+      }),
+    );
+
+    assert.deepEqual(result.authorization, { authorized: false, state: "session_expired" }, scenario);
+    assert.equal(result.protectedWorkCalls, 0, scenario);
+  }
+});
+
+test("every protected request revalidates current authority after a downgrade", async () => {
+  let rpcCalls = 0;
+  const requireAdminAction = createRequireAdminAction(
+    () => getAdminAuthorizationWith(dependencies({
+      isCurrentAdmin: async () => {
+        rpcCalls += 1;
+        return { data: rpcCalls === 1, error: null };
+      },
+    })),
+  );
+
+  assert.deepEqual(await requireAdminAction(), { authorized: true, userId: "admin-subject" });
+  assert.deepEqual(await requireAdminAction(), { authorized: false, state: "session_expired" });
+  assert.equal(rpcCalls, 2);
+});

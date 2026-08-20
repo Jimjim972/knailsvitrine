@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  CONTACT_FORM_NAMES,
+  type ContactFormName,
+} from "../contact/constants.ts";
 
 export type ContactDraft = {
   name: string;
@@ -24,6 +28,7 @@ export type ContactActionState =
       phase: "authorized";
       submissionId: string;
       submission: NormalizedContactSubmission;
+      formName: ContactFormName;
     }
   | {
       phase: "error";
@@ -79,7 +84,7 @@ const actionInputSchema = draftSchema.extend({
 });
 
 const providerInputSchema = actionInputSchema.extend({
-  formName: z.literal("contact", { message: "Le formulaire est invalide." }),
+  formName: z.enum(CONTACT_FORM_NAMES, { message: "Le formulaire est invalide." }),
 });
 
 function stringField(formData: FormData, name: string): string {
@@ -123,7 +128,10 @@ export function validateContactValues(values: ContactFormValues) {
   };
 }
 
-export function validateContactProviderValues(values: Record<string, unknown>) {
+export function validateContactProviderValues(
+  values: Record<string, unknown>,
+  expectedFormName: ContactFormName = "contact",
+) {
   const parsed = providerInputSchema.safeParse({
     formName: values["form-name"],
     submissionId: values["submission-id"],
@@ -133,16 +141,16 @@ export function validateContactProviderValues(values: Record<string, unknown>) {
     message: values.message,
     botField: values["bot-field"] ?? "",
   });
-  if (!parsed.success) {
-    const flattened = parsed.error.flatten().fieldErrors;
+  if (!parsed.success || parsed.data.formName !== expectedFormName) {
+    const flattened = parsed.success ? undefined : parsed.error.flatten().fieldErrors;
     return {
       success: false as const,
       fieldErrors: {
-        submissionId: flattened.submissionId,
-        name: flattened.name,
-        phone: flattened.phone,
-        email: flattened.email,
-        message: flattened.message,
+        submissionId: flattened?.submissionId,
+        name: flattened?.name,
+        phone: flattened?.phone,
+        email: flattened?.email,
+        message: flattened?.message,
       } satisfies ContactFieldErrors,
     };
   }

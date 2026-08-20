@@ -1,7 +1,7 @@
 begin;
 \ir 00_test_helpers.sql
 
-select extensions.plan(17);
+select extensions.plan(19);
 
 select extensions.is((select count(*) from storage.buckets where id = 'galerie'), 1::bigint, 'internal.storage.bucket_exists');
 select extensions.is((select public from storage.buckets where id = 'galerie'), false, 'privilege.storage.bucket_private');
@@ -28,7 +28,9 @@ select extensions.ok((select with_check like '%is_current_admin%' and with_check
 select extensions.ok((select qual like '%is_current_admin%' and with_check like '%is_current_admin%' and qual like '%galerie%' and with_check like '%galerie%' from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'galerie_admin_update'), 'authorization.storage.update_using_and_check');
 select extensions.ok((select qual like '%is_current_admin%' and qual like '%bucket_id%' and qual like '%galerie%' and qual like '%storage_path%' and qual like '%pending_storage_path%' and qual like '%cleanup_storage_path%' and qual like '%jpg%' and qual like '%jpeg%' and qual like '%png%' and qual like '%webp%' from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'galerie_admin_delete'), 'authorization.storage.delete_referenced_legacy_boundaries');
 
-select extensions.ok(has_table_privilege('authenticated', 'storage.objects', 'insert,select,update'), 'privilege.storage.upsert_components');
+select extensions.ok(has_table_privilege('authenticated', 'storage.objects', 'insert'), 'privilege.storage.insert_component');
+select extensions.ok(has_table_privilege('authenticated', 'storage.objects', 'select'), 'privilege.storage.select_component');
+select extensions.ok(has_table_privilege('authenticated', 'storage.objects', 'update'), 'privilege.storage.update_component');
 select extensions.ok(has_table_privilege('authenticated', 'storage.objects', 'delete'), 'privilege.storage.delete_component');
 select extensions.ok(has_table_privilege('anon', 'storage.objects', 'select'), 'privilege.storage.anon_select_gate_for_object_get');
 

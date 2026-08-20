@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --test --experimental-strip-types tests/unit/auth/*.test.ts tests/unit/services/*.test.ts tests/unit/gallery/*.test.ts",
+    "test:unit": "node --test --experimental-strip-types tests/unit/auth/*.test.ts tests/unit/services/*.test.ts tests/unit/gallery/*.test.ts tests/unit/production-readiness/*.test.ts",
     "test:unit:contact": "node --test --experimental-strip-types tests/unit/contact/*.test.ts",
     "test:e2e:auth": "playwright test tests/admin-auth",
     "test:e2e:services": "playwright test tests/services-management",
@@ -24,6 +24,7 @@
     "supabase:test:db": "supabase test db --local supabase/tests/database/01_schema_constraints.sql supabase/tests/database/02_public_access.sql supabase/tests/database/03_admin_table_access.sql supabase/tests/database/04_storage_policies.sql supabase/tests/database/05_foundation_inventory.sql supabase/tests/database/06_scale_and_order.sql supabase/tests/database/07_admin_authentication.sql supabase/tests/database/08_services_management.sql supabase/tests/database/09_gallery_management.sql supabase/tests/database/10_service_categories.sql",
     "supabase:test:auth": "node scripts/check-auth-signup.mjs",
     "supabase:test:storage": "node scripts/check-supabase-storage.mjs",
+    "supabase:test:production-security": "supabase test db --local supabase/tests/database/04_storage_policies.sql supabase/tests/database/11_production_security.sql",
     "supabase:configure:gallery": "node scripts/configure-gallery-bucket.mjs --local",
     "gallery:bootstrap": "node scripts/bootstrap-gallery.mjs --local",
     "gallery:bootstrap:check": "node scripts/check-gallery-bootstrap.mjs",
@@ -37,6 +38,9 @@
     "gallery:check": "node scripts/check-gallery-management.mjs",
     "contact:dev": "netlify dev --port 8888",
     "contact:check": "node scripts/check-contact-form.mjs",
+    "production:target-check": "node scripts/check-deploy-target.mjs",
+    "security:hosted-check": "node scripts/check-hosted-supabase-security.mjs",
+    "security:check": "node scripts/check-production-security.mjs",
     "scan:build-secrets": "node scripts/scan-build-secrets.mjs"
   },
   "dependencies": {

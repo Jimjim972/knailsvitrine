@@ -3,9 +3,13 @@ import {
   validateContactValues,
   type ContactActionState,
 } from "../validations/contact.ts";
+import type { DeploymentContext } from "../production-readiness/types.ts";
+import { resolveDeploymentContext } from "../site/deployment-context.ts";
+import { contactFormNameForContext } from "./constants.ts";
 
 export async function executeContactSubmission(
   formData: FormData,
+  context: DeploymentContext = resolveDeploymentContext().context,
 ): Promise<ContactActionState> {
   const values = contactFormValues(formData);
   const publicValues = {
@@ -30,5 +34,6 @@ export async function executeContactSubmission(
     phase: "authorized",
     submissionId: validation.data.submissionId,
     submission: validation.data,
+    formName: contactFormNameForContext(context),
   };
 }

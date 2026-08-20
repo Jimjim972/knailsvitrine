@@ -140,8 +140,23 @@ async function main() {
     photoIds.add(readyReservation.photoId);
     const upload = await admin.client.storage.from(bucket).upload(readyPath, webpBytes, { contentType: "image/webp", upsert: false });
     results.push(!upload.error && await objectExists(admin.client, readyPath)
-      ? pass("privilege.storage.admin_reserved_upload", "Administrator can upload the exact reserved WebP")
-      : fail("privilege.storage.admin_reserved_upload", "privilege", "Reserved administrator upload failed"));
+      ? pass("privilege.storage.admin_insert", "Administrator can INSERT the exact reserved WebP")
+      : fail("privilege.storage.admin_insert", "privilege", "Reserved administrator INSERT failed"));
+
+    stage = "reserved-webp-select";
+    const adminSelection = await admin.client.storage.from(bucket).download(readyPath);
+    results.push(!adminSelection.error && adminSelection.data.size === webpBytes.length
+      ? pass("privilege.storage.admin_select", "Administrator can SELECT the exact referenced object")
+      : fail("privilege.storage.admin_select", "privilege", "Referenced administrator SELECT failed"));
+
+    stage = "reserved-webp-update";
+    const replacement = await admin.client.storage.from(bucket).upload(readyPath, webpBytes, {
+      contentType: "image/webp",
+      upsert: true,
+    });
+    results.push(!replacement.error && await objectExists(admin.client, readyPath)
+      ? pass("privilege.storage.admin_update", "Administrator can UPDATE the exact reserved object by upsert")
+      : fail("privilege.storage.admin_update", "privilege", "Referenced administrator UPDATE failed"));
 
     stage = "unreserved-upload";
     const unreservedPath = `photos/${randomUUID()}.webp`;
@@ -219,8 +234,8 @@ async function main() {
     stage = "referenced-delete";
     const readyDelete = await admin.client.storage.from(bucket).remove([readyPath]);
     results.push(!readyDelete.error && !(await objectExists(admin.client, readyPath))
-      ? pass("privilege.storage.referenced_delete", "Administrator can delete an exact referenced path")
-      : fail("privilege.storage.referenced_delete", "privilege", "Exact referenced path deletion failed"));
+      ? pass("privilege.storage.admin_delete", "Administrator can DELETE an exact referenced path")
+      : fail("privilege.storage.admin_delete", "privilege", "Exact referenced path DELETE failed"));
     await admin.client.from("photos_galerie").delete().eq("id", readyReservation.photoId);
     results.push(!(await canDownload(anonymousClient, readyPath))
       ? pass("authorization.storage.deleted_download", "Deleted metadata and object are no longer downloadable")

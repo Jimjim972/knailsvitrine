@@ -179,11 +179,11 @@ Le formulaire devra :
 
 Les règles initiales des champs sont : nom obligatoire de 2 à 120 caractères, e-mail obligatoire de 254 caractères maximum avec un format exploitable, téléphone facultatif de 6 à 30 caractères contenant au moins six chiffres lorsqu'il est renseigné, et message obligatoire de 10 à 2 000 caractères. Les espaces périphériques sont supprimés avant validation. Le téléphone peut contenir `+`, espaces, points, tirets et parenthèses afin de prendre en charge les formats locaux et internationaux usuels.
 
-Le navigateur remet d'abord la saisie à une Server Action Next.js. Celle-ci revalide les données avec Zod et retourne uniquement un instantané normalisé autorisé. Le navigateur ajoute ensuite les champs techniques réservés au fournisseur et envoie cette charge URL-encodée vers le chemin relatif constant `/__forms.html`, sans cookies. Le formulaire React ne déclare pas `form-name` dans sa requête vers la Server Action ; la garde Edge laisse donc cette étape atteindre Next.js, tout en revalidant tout POST qui déclare `form-name=contact` avant Netlify Forms.
+Le navigateur remet d'abord la saisie à une Server Action Next.js. Celle-ci revalide les données avec Zod et retourne uniquement un instantané normalisé autorisé. Le navigateur ajoute ensuite les champs techniques réservés au fournisseur et envoie cette charge URL-encodée vers le chemin relatif constant `/__forms.html`, sans cookies. Le formulaire React ne déclare pas `form-name` dans sa requête vers la Server Action ; la garde Edge laisse donc cette étape atteindre Next.js. Le contexte Netlify de confiance sélectionne ensuite `contact` en production et `contact-preview` en Deploy Preview, branch deploy ou développement, et tout POST qui déclare l'autre nom est refusé avant Netlify Forms.
 
 Le formulaire présente quatre états distincts et accessibles : neutre, envoi en cours, envoi réussi et erreur récupérable. Une erreur conserve les quatre valeurs et n'affiche jamais de faux succès ; seule l'autorisation serveur suivie d'une réponse HTTP positive de Netlify autorise le succès visible et vide les champs, sans prétendre connaître le classement anti-spam final. L'appel fournisseur expire exactement 10 secondes après le démarrage du `fetch` navigateur ; ce délai indique honnêtement que la réception n'a pas pu être confirmée. Les demandes vérifiées sont consultées dans l'interface Netlify du MVP, sans ajouter de boîte de réception à `/admin`.
 
-La notification Netlify est configurée vers une adresse opérationnelle confirmée de l'institut et n'est déclenchée que pour les soumissions vérifiées. L'adresse destinataire n'est pas versionnée. Cette fonctionnalité n'envoie pas d'autoréponse e-mail au visiteur.
+Netlify détecte deux blueprints statiques, `contact` et `contact-preview`. Chacun possède sa propre notification `submission_created`, bornée par l'identifiant et le nom du formulaire ; la notification preview utilise en plus un objet explicitement identifié comme preview. Les destinations sont configurées dans Netlify, ne sont pas versionnées et peuvent être identiques sans fusionner les deux hooks. Une notification n'est déclenchée que pour une soumission vérifiée, l'e-mail du visiteur alimente le `Reply-To`, et aucune autoréponse n'est envoyée au visiteur.
 
 Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remplacement devra être décidée avant implémentation : envoi par un fournisseur d'e-mail transactionnel ou stockage sécurisé dans Supabase avec protection anti-spam.
 
@@ -289,8 +289,15 @@ Le déploiement doit utiliser :
 - `npm run build` comme commande de construction ;
 - le dépôt GitHub comme source ;
 - une branche principale pour la production ;
-- des variables d'environnement distinctes entre développement et production ;
-- un domaine personnalisé avec HTTPS.
+- des variables d'environnement distinctes entre production, Deploy Preview et branch deploy ;
+- un projet Supabase non-production isolé pour Deploy Preview et branch deploy, sans copie des données de production ;
+- les trois seules variables applicatives `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` et `SERVICE_SUCCESS_FLASH_SECRET`, ce dernier étant aléatoire, secret, distinct par contexte et long d'au moins 32 caractères ;
+- aucune variable ponctuelle `SUPABASE_GALLERY_CONFIG_*` dans Netlify ;
+- une origine publique canonique unique `https://knailsbeauty.fr`, sans `www`, protégée par un certificat valide ;
+- `www.knailsbeauty.fr`, `knailsbeauty.com`, `www.knailsbeauty.com` et le sous-domaine technique Netlify comme entrées exclusivement redirectrices, chacune protégée par un certificat lorsqu'elle est demandée en HTTPS ;
+- une redirection permanente de toutes les variantes HTTP et HTTPS non canoniques vers `https://knailsbeauty.fr`, en conservant le chemin et les paramètres de requête, sans règle applicable à l'origine canonique elle-même et donc sans boucle.
+
+Le domaine `knailsbeauty.com` ne sert jamais directement de contenu et ne peut pas devenir canonique : son apex et son alias `www` redirigent exclusivement vers le domaine `.fr` sans `www`.
 
 Les déploiements de production doivent rester intentionnels, car chacun consomme une partie des crédits de l'offre gratuite.
 

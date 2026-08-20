@@ -39,11 +39,11 @@ Les fichiers restent dans Supabase Storage, mais le bucket galerie est privé et
 
 ## Formulaire de contact Netlify
 
-Le site utilise Netlify Forms sans variable secrète et sans stockage Supabase supplémentaire. La détection des formulaires doit être activée dans Netlify avant le déploiement de contrôle, puis le site doit être redéployé afin que le blueprint statique `public/__forms.html` soit détecté.
+Le site utilise Netlify Forms sans variable secrète et sans stockage Supabase supplémentaire. La détection des formulaires doit être activée dans Netlify avant le déploiement de contrôle, puis le site doit être redéployé afin que les deux blueprints statiques `contact` et `contact-preview` de `public/__forms.html` soient détectés. Netlify Forms étant une ressource du site et non du contexte de deploy, cette séparation par nom est obligatoire même lorsque les deux formulaires appartiennent au même site.
 
-Le navigateur invoque d'abord une Server Action Next.js sans déclarer `form-name`. L'action revalide avec Zod et retourne un instantané normalisé autorisé. Le navigateur ajoute alors `form-name=contact` et POSTe la charge URL-encodée vers le chemin relatif constant `/__forms.html`, avec les credentials omis et un timeout exact de 10 secondes. Aucune origine configurable ou fournie par l'appelant n'est acceptée. Une Edge Function versionnée laisse passer sans lecture les requêtes internes portant `Next-Action`, puis revalide tout autre POST qui déclare `form-name=contact` avant le traitement de Forms. Le honeypot déclaré et Akismet restent les filtres anti-spam natifs ; aucun captcha visible n'est ajouté au MVP.
+Le navigateur invoque d'abord une Server Action Next.js sans déclarer `form-name`. L'action revalide avec Zod et retourne un instantané normalisé autorisé. Le serveur sélectionne `contact` uniquement quand le contexte Netlify de confiance vaut `production`, et `contact-preview` pour `deploy-preview`, `branch-deploy`, `dev` ou `local`. Le navigateur POSTe ensuite la charge URL-encodée vers le chemin relatif constant `/__forms.html`, avec les credentials omis et un timeout exact de 10 secondes. Aucune origine configurable ou fournie par l'appelant n'est acceptée. Une Edge Function versionnée laisse passer sans lecture les requêtes internes portant `Next-Action`, puis revalide tout autre POST Contact et refuse le nom qui ne correspond pas à `context.deploy.context`. Le honeypot déclaré et Akismet restent les filtres anti-spam natifs ; aucun captcha visible n'est ajouté au MVP.
 
-Le succès navigateur repose sur l'autorisation renvoyée par la Server Action puis un statut HTTP positif du fournisseur, pas sur le classement final Verified/Spam que Netlify ne renvoie pas au client. Une notification Netlify est configurée vers l'adresse opérationnelle confirmée de l'institut pour les seules soumissions vérifiées ; le champ `email` alimente le `Reply-To`. Cette adresse reste dans la configuration Netlify et n'est pas versionnée. Aucune autoréponse au visiteur n'est prévue. La Deploy Preview doit contrôler séparément la chaîne hybride, les POST directs, la détection, la garde Edge, la réception humaine, le honeypot, Akismet et la notification. Un délai réseau ambigu conserve un identifiant opaque de corrélation pour rendre un éventuel doublon repérable, sans prétendre que Netlify fournit une idempotence.
+Le succès navigateur repose sur l'autorisation renvoyée par la Server Action puis un statut HTTP positif du fournisseur, pas sur le classement final Verified/Spam que Netlify ne renvoie pas au client. Deux hooks e-mail `submission_created` distincts sont configurés et bornés par `form_id`/`form_name`, l'un pour `contact`, l'autre pour `contact-preview`; le second porte un objet explicitement identifié comme preview. Le champ `email` alimente le `Reply-To`. Les destinations restent dans la configuration Netlify et ne sont pas versionnées. Aucune autoréponse au visiteur n'est prévue. La Deploy Preview doit contrôler séparément la chaîne hybride, les POST directs, la détection, la garde Edge, la réception humaine, le honeypot, Akismet et la notification. Un délai réseau ambigu conserve un identifiant opaque de corrélation pour rendre un éventuel doublon repérable, sans prétendre que Netlify fournit une idempotence.
 
 ### Supabase Free
 
@@ -81,7 +81,9 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SERVICE_SUCCESS_FLASH_SECRET=
 ```
 
-La maintenance ponctuelle du bucket hébergé utilise séparément `SUPABASE_GALLERY_CONFIG_URL`, `SUPABASE_GALLERY_CONFIG_PROJECT_REF` et `SUPABASE_GALLERY_CONFIG_SECRET_KEY` depuis `.env.gallery-config.example`. La dernière accepte uniquement une clé Supabase dédiée au format `sb_secret_...`, créée pour cette opération ; la clé JWT historique `service_role` est refusée. Le script exige la concordance explicite de l'URL et de la référence, masque la clé dans ses sorties et relit le flag privé, la limite 8 Mio et les MIME avant succès. Ces variables ne sont jamais configurées dans Netlify, `.env.local`, l'application ou le bootstrap CRUD et ne sont pas versionnées ; la clé est révoquée après la configuration vérifiée et son ancien jeton doit alors échouer. En local, le script accepte uniquement une cible loopback et vérifie `supabase/config.toml` avec les credentials éphémères de la CLI.
+Dans Netlify, `production` cible exclusivement le projet Supabase de production. `deploy-preview` et `branch-deploy` ciblent le projet Free isolé `knails-preview` (`vrokelzcffltvztcwftx`), provisionné avec les mêmes sept migrations, l'auto-inscription désactivée et un bucket privé `galerie`, mais sans copie de comptes, prestations, catégories, photos ou objets de production. La clé publiable correspond au projet de chaque contexte. Les trois valeurs de `SERVICE_SUCCESS_FLASH_SECRET` sont distinctes, générées aléatoirement avec au moins 32 caractères et enregistrées comme secrets Netlify.
+
+La maintenance ponctuelle du bucket hébergé utilise séparément `SUPABASE_GALLERY_CONFIG_URL`, `SUPABASE_GALLERY_CONFIG_PROJECT_REF` et `SUPABASE_GALLERY_CONFIG_SECRET_KEY` depuis `.env.gallery-config.example`. La dernière accepte uniquement une clé Supabase dédiée au format `sb_secret_...`, créée pour cette opération ; la clé JWT historique `service_role` est refusée. Comme une clé `sb_secret_...` n'est pas un JWT, le script l'envoie uniquement dans l'en-tête `apikey`, crée le bucket s'il est absent, exige la concordance explicite de l'URL et de la référence, masque la clé dans ses sorties et relit le flag privé, la limite 8 Mio et les MIME avant succès. Ces variables ne sont jamais configurées dans Netlify, `.env.local`, l'application ou le bootstrap CRUD et ne sont pas versionnées ; la clé est supprimée après la configuration vérifiée et son ancien jeton doit alors recevoir une réponse non positive de Storage et de la Data API. En local, le script accepte uniquement une cible loopback et vérifie `supabase/config.toml` avec les credentials éphémères de la CLI.
 
 `SERVICE_SUCCESS_FLASH_SECRET` est une valeur aléatoire serveur d'au moins 32 caractères, distincte par environnement. Elle authentifie les confirmations ponctuelles après une mutation de prestation et doit être stockée comme variable sensible dans Netlify, sans préfixe `NEXT_PUBLIC_`, sans valeur versionnée et sans envoi au navigateur. Une clé `service_role` ne doit jamais être exposée dans une variable préfixée par `NEXT_PUBLIC_` ni envoyée au navigateur.
 
@@ -97,15 +99,40 @@ La fondation utilise Node.js 22 LTS, Supabase CLI 2.112.0, `@supabase/supabase-j
 
 Netlify prend en charge les Server Actions via son adaptateur OpenNext sans ancien flag expérimental. Aucun `allowedOrigins` large, clé de chiffrement Server Actions stable ou élargissement de taille de corps n'est ajouté pour 002. La preview Netlify, les cookies derrière CDN, l'isolation `private, no-store`, le comportement d'un onglet conservé entre deux déploiements et le risque de 429 lié à une sortie partagée restent des gates de déploiement, pas des propriétés prétendues par les seuls tests locaux. Pour la galerie, le budget reproductible utilise neuf objets de 1 Mio : au plus deux requêtes/2 Mio dans les cinq secondes suivant `load` sans défilement à 320 × 800 px, puis au plus neuf invocations/9 Mio pour une consultation complète sans doublon, soit 9 000 invocations/9 000 Mio pour 1 000 consultations. La preview compare ce budget aux quotas Netlify officiels alors en vigueur avant toute validation.
 
+## Domaines, DNS et HTTPS
+
+L'origine canonique unique est `https://knailsbeauty.fr`, sans `www`. Netlify conserve `knailsbeauty.fr` comme domaine principal et rattache `www.knailsbeauty.fr`, `knailsbeauty.com` et `www.knailsbeauty.com` comme alias ; le domaine `.com` a un rôle exclusivement redirecteur. Le nom technique `friendly-cactus-227b77.netlify.app` reste accessible uniquement comme point d'entrée redirecteur.
+
+Les zones restent administrées chez OVH afin de préserver leurs autres enregistrements. Aucune zone Netlify DNS non déléguée n'est conservée. Pour chacun des apex `.fr` et `.com`, l'unique enregistrement web `A` pointe vers le load balancer Netlify `75.2.60.5` ; chaque hôte `www` est un `CNAME` vers `friendly-cactus-227b77.netlify.app`. Tout ancien enregistrement web concurrent doit être retiré, sans toucher aux enregistrements de messagerie ou de vérification non concernés. Après propagation, Netlify provisionne automatiquement un certificat pour le domaine principal et chaque alias HTTPS.
+
+`netlify.toml` déclare explicitement les neuf entrées non canoniques : HTTP sur l'apex `.fr`, HTTP et HTTPS sur `www` `.fr`, HTTP et HTTPS sur les apex et `www` `.com`, puis HTTP et HTTPS sur l'hôte technique. Elles répondent toutes par une redirection `301` vers `https://knailsbeauty.fr/:splat`. Le placeholder conserve le chemin et Netlify transmet automatiquement les paramètres de requête avec une redirection 301. Aucune règle ne prend `https://knailsbeauty.fr` comme origine, ce qui exclut une boucle canonique.
+
+## Rollback applicatif et restauration des données
+
+Un rollback Netlify et une restauration Supabase sont deux opérations indépendantes. Publier un ancien deploy Netlify remplace atomiquement le code et les artefacts servis, mais ne revient sur aucune migration, ligne de base, identité Auth ou image Storage. Une panne applicative sans corruption de données ne justifie donc jamais une restauration Supabase.
+
+Avant tout rollback Netlify :
+
+1. consigner le SHA, le deploy ID et l'heure du deploy actuellement publié, puis identifier un ancien deploy de production `ready` par son permalink immuable ;
+2. arrêter temporairement l'auto-publication si un nouveau deploy Git risque d'écraser le rollback ;
+3. vérifier que l'ancien deploy est lui-même validé, lié à un SHA connu, que ses variables obligatoires existent encore et qu'il cible le même projet Supabase de production ;
+4. comparer ses contrats de tables, colonnes, fonctions, RLS et Storage au schéma déjà migré. Une migration appliquée n'est jamais annulée automatiquement ; si l'ancien code dépend d'un contrat supprimé ou modifié de manière incompatible, refuser le rollback et livrer un roll-forward ;
+5. publier l'ancien deploy depuis sa page avec `Publish deploy`, sans rebuild, puis rejouer immédiatement le smoke HTTPS, pages publiques, Contact, Auth, données, image, sitemap, robots et `noindex` admin ;
+6. conserver le deploy stable verrouillé seulement pendant l'incident, préparer le correctif forward, puis réactiver l'auto-publication sous contrôle.
+
+La restauration Supabase est réservée à une corruption ou perte de données confirmée et exige une décision distincte. Avant une opération importante, produire un export logique chiffré hors dépôt et conserver séparément les originaux de la galerie. Sur l'offre Free, ne pas supposer qu'un backup téléchargeable ou un PITR est disponible. Tester d'abord l'export sur la pile locale ou un projet jetable, vérifier migrations, contraintes, RLS, Auth, inventaires et totaux, puis réimporter séparément les octets Storage : un backup PostgreSQL contient leurs métadonnées, pas les fichiers. Une restauration de production exige une fenêtre de maintenance, une sauvegarde juste avant intervention, l'approbation du responsable et une recette complète après reprise ; elle n'est jamais exécutée comme simple exercice.
+
+Un exercice non destructif s'arrête avant `Publish deploy` dès qu'un prérequis échoue. Le résultat peut donc réussir en démontrant que la procédure refuse correctement une cible non validée ou incompatible, sans faire régresser la production et sans toucher à Supabase. La restauration locale/jetable complète et ses digests sont traités séparément par la recette de reprise finale.
+
 ## Déploiement prévu
 
 1. Stocker le projet dans un dépôt GitHub.
 2. Importer le dépôt dans Netlify.
 3. Laisser Netlify détecter et construire l'application Next.js.
-4. Configurer les variables d'environnement Supabase et le secret serveur de confirmation dans Netlify.
-5. Activer la détection Netlify Forms, configurer la notification vers l'adresse opérationnelle confirmée de l'institut, redéployer, puis vérifier le blueprint, la garde Edge, le classement anti-spam, le `Reply-To` et la notification sur une Deploy Preview.
+4. Configurer par contexte les variables Supabase et le secret serveur de confirmation dans Netlify ; production conserve sa cible, Deploy Preview et branch deploy utilisent `knails-preview`.
+5. Activer la détection Netlify Forms, détecter `contact` et `contact-preview`, configurer pour chacun un hook e-mail borné au formulaire, puis vérifier la garde Edge, le classement anti-spam, le `Reply-To` et la notification de test sur une Deploy Preview GitHub du SHA candidat.
 6. Vérifier la connexion, les opérations d'administration et l'affichage des images.
-7. Connecter le domaine personnalisé et activer le HTTPS.
+7. Rattacher les quatre domaines de production à Netlify, remplacer uniquement les enregistrements web OVH des apex et `www`, attendre la propagation et l'émission des certificats, puis prouver toute la matrice HTTP/HTTPS, chemin et paramètres inclus, sans boucle.
 
 ## Évolution possible
 
@@ -125,6 +152,11 @@ Si les limites gratuites deviennent insuffisantes :
 - [Notifications Netlify Forms](https://docs.netlify.com/manage/forms/notifications/)
 - [Usage et facturation de Netlify Forms](https://docs.netlify.com/manage/forms/usage-and-billing/)
 - [Fonctionnement des crédits Netlify](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/how-credits-work/)
+- [Configuration DNS externe Netlify](https://docs.netlify.com/manage/domains/configure-domains/configure-external-dns/)
+- [Options de redirection Netlify](https://docs.netlify.com/manage/routing/redirects/redirect-options/)
+- [Dépannage des certificats Netlify](https://docs.netlify.com/manage/domains/troubleshooting/troubleshoot-ssl-and-https/)
+- [Gestion des deploys et rollbacks Netlify](https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/)
 - [Tarifs Supabase](https://supabase.com/pricing)
+- [Sauvegardes de base Supabase](https://supabase.com/docs/guides/platform/backups)
 - [Guide Next.js et Supabase Auth](https://supabase.com/docs/guides/auth/quickstarts/nextjs)
 - [Règles d'utilisation de Vercel Hobby](https://vercel.com/docs/limits/fair-use-guidelines)

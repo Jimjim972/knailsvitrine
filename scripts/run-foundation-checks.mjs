@@ -335,6 +335,6 @@ async function main() {
   process.exitCode = results.some((result) => result.status === "fail") ? 1 : 0;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main();
 }
