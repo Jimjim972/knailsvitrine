@@ -52,6 +52,29 @@ async function managementRequest(accessToken, projectRef, path) {
   return response.json();
 }
 
+async function managementSql(accessToken, projectRef, query, { readOnly = false } = {}) {
+  const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, ...(readOnly ? { read_only: true } : {}) }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error("management_sql_failed");
+  return response.json();
+}
+
+function uuidSqlList(values) {
+  const entries = [...values];
+  if (entries.some((value) => !/^[0-9a-f]{8}-[0-9a-f-]{27}$/.test(value))) {
+    throw new Error("fixture_uuid_invalid");
+  }
+  return entries.map((value) => `'${value}'::uuid`).join(", ");
+}
+
 function exactApiKey(keys, type) {
   const matches = keys.filter((entry) => entry?.type === type && typeof entry.api_key === "string");
   if (matches.length !== 1) throw new Error("api_key_inventory_invalid");
@@ -278,9 +301,14 @@ export async function runPreviewSecurity(environment = process.env) {
       id: deniedId, nom: "Mutation refusée", description: "Fixture preview", categorie: "soins_corps",
       prix: "3.00", type_prix: "fixed", duree_minutes: 30, ordre_affichage: 2, actif: true,
     });
-    const deniedResidue = await fixtureClient.from("prestations").select("id").eq("id", deniedId);
+    const deniedResidue = await managementSql(
+      accessToken,
+      projectRef,
+      `select count(*)::integer as count from public.prestations where id = '${deniedId}'::uuid`,
+      { readOnly: true },
+    );
     record(results, "authorization.rls.member_mutation",
-      Boolean(deniedMutation.error) && !deniedResidue.error && deniedResidue.data.length === 0,
+      Boolean(deniedMutation.error) && deniedResidue?.[0]?.count === 0,
       "Authenticated non-admin mutation is refused without residue");
     const adminUpdate = await admin.client.from("prestations").update({ nom: "Fixture administrée" }).eq("id", activeServiceId);
     record(results, "privilege.rls.admin_mutation", !adminUpdate.error,
@@ -364,16 +392,31 @@ export async function runPreviewSecurity(environment = process.env) {
     if (fixtureClient) {
       try {
         if (objectPaths.size > 0) await fixtureClient.storage.from(BUCKET).remove([...objectPaths]);
-        if (photoIds.size > 0) await fixtureClient.from("photos_galerie").delete().in("id", [...photoIds]);
-        if (serviceIds.size > 0) await fixtureClient.from("prestations").delete().in("id", [...serviceIds]);
+        if (photoIds.size > 0 || serviceIds.size > 0) {
+          const statements = ["begin"];
+          if (photoIds.size > 0) {
+            statements.push(`delete from public.photos_galerie where id in (${uuidSqlList(photoIds)})`);
+          }
+          if (serviceIds.size > 0) {
+            statements.push(`delete from public.prestations where id in (${uuidSqlList(serviceIds)})`);
+          }
+          statements.push("commit");
+          await managementSql(accessToken, projectRef, `${statements.join("; ")};`);
+        }
         await Promise.all([...userIds].map((id) => fixtureClient.auth.admin.deleteUser(id)));
-        const [remainingPhotos, remainingServices, remainingUsers] = await Promise.all([
-          photoIds.size > 0 ? fixtureClient.from("photos_galerie").select("id").in("id", [...photoIds]) : { data: [], error: null },
-          serviceIds.size > 0 ? fixtureClient.from("prestations").select("id").in("id", [...serviceIds]) : { data: [], error: null },
-          listAllUsers(fixtureClient),
-        ]);
-        cleanupPassed = !remainingPhotos.error && remainingPhotos.data.length === 0
-          && !remainingServices.error && remainingServices.data.length === 0
+        const countParts = [];
+        if (photoIds.size > 0) {
+          countParts.push(`(select count(*) from public.photos_galerie where id in (${uuidSqlList(photoIds)})) as photos`);
+        }
+        if (serviceIds.size > 0) {
+          countParts.push(`(select count(*) from public.prestations where id in (${uuidSqlList(serviceIds)})) as services`);
+        }
+        const remainingRows = countParts.length > 0
+          ? await managementSql(accessToken, projectRef, `select ${countParts.join(", ")}`, { readOnly: true })
+          : [{ photos: 0, services: 0 }];
+        const remainingUsers = await listAllUsers(fixtureClient);
+        cleanupPassed = Number(remainingRows?.[0]?.photos ?? 0) === 0
+          && Number(remainingRows?.[0]?.services ?? 0) === 0
           && !remainingUsers.some(({ id }) => userIds.has(id));
       } catch {
         cleanupPassed = false;
