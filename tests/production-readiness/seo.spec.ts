@@ -120,7 +120,11 @@ test("le validateur public Schema.org retourne un graphe sans erreur", async ({ 
   try {
     const response = await page.goto(validationUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
     if (!response?.ok()) throw new Error("validator_http_unavailable");
-    await expect(page.locator("#right-busy-cell")).toBeHidden({ timeout: 30_000 });
+    await page.waitForFunction(
+      () => (document.querySelector("#results-cell")?.textContent?.trim().length ?? 0) > 0,
+      undefined,
+      { timeout: 30_000 },
+    );
     const result = (await page.locator("#results-cell").innerText()).replaceAll(/\s+/g, " ");
     if (!result || /unable|could not|failed to fetch|impossible|indisponible/i.test(result)) {
       throw new Error("schema_org_validator_blocked");

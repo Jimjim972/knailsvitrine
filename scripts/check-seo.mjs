@@ -163,7 +163,11 @@ async function validateWithSchemaOrg(targetUrl) {
     const validatorUrl = "https://validator.schema.org/?hl=en-US#url=" + encodeURIComponent(targetUrl);
     const response = await page.goto(validatorUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
     if (!response?.ok()) return result("seo.structured_data.schema_org", "blocked", "Schema.org validator is unavailable");
-    await page.locator("#right-busy-cell").waitFor({ state: "hidden", timeout: 30_000 });
+    await page.waitForFunction(
+      () => (document.querySelector("#results-cell")?.textContent?.trim().length ?? 0) > 0,
+      undefined,
+      { timeout: 30_000 },
+    );
     const output = (await page.locator("#results-cell").innerText()).replaceAll(/\s+/g, " ");
     if (!output || /unable|could not|failed to fetch|impossible|indisponible/i.test(output)) {
       return result("seo.structured_data.schema_org", "blocked", "Schema.org validator did not return a verifiable result");
