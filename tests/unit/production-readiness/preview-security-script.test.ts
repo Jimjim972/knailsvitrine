@@ -16,6 +16,7 @@ test("les assertions utilisent des sessions réelles et réservent la clé secr�
   assert.match(source, /signInAnonymously/);
   assert.match(source, /is_current_admin/);
   assert.match(source, /fixtureClient\.auth\.admin\.createUser/);
+  assert.match(source, /api-keys\?reveal=true/);
   assert.doesNotMatch(source, /service_role/i);
 });
 

@@ -172,7 +172,7 @@ export async function runPreviewSecurity(environment = process.env) {
 
   try {
     stage = "key-inventory";
-    const keysPayload = await managementRequest(accessToken, projectRef, "/api-keys");
+    const keysPayload = await managementRequest(accessToken, projectRef, "/api-keys?reveal=true");
     const keys = Array.isArray(keysPayload) ? keysPayload : keysPayload?.keys ?? [];
     const managedPublishableKey = exactApiKey(keys, "publishable");
     const fixtureSecretKey = exactApiKey(keys, "secret");
