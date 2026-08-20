@@ -21,6 +21,19 @@ function parseCsp(value: string) {
   );
 }
 
+function cacheDirectives(value: string) {
+  return new Set(value.split(",").map((directive) => directive.trim()).filter(Boolean));
+}
+
+function isBlockedNetlifyPreviewToolbar(message: string) {
+  const baseUrl = process.env.PLAYWRIGHT_BASE_URL;
+  if (!baseUrl) return false;
+  const hostname = new URL(baseUrl).hostname;
+  return hostname.startsWith("deploy-preview-") && hostname.endsWith(".netlify.app")
+    && /Framing 'https:\/\/app\.netlify\.com\/'/i.test(message)
+    && /content security policy/i.test(message);
+}
+
 function expectSecurityHeaders(response: APIResponse, route: string) {
   const headers = response.headers();
   const cspValue = headers["content-security-policy"] ?? "";
@@ -63,15 +76,18 @@ test("les réponses admin et image privée ne sont jamais stockables", async ({ 
     { maxRedirects: 0 },
   );
   expect(missingImage.status()).toBe(404);
-  expect(missingImage.headers()["cache-control"]).toBe("private, no-store");
+  expect(cacheDirectives(missingImage.headers()["cache-control"] ?? ""))
+    .toEqual(new Set(["private", "no-store"]));
   expect(missingImage.headers()["x-content-type-options"]).toBe("nosniff");
 });
 
 test("la CSP statique ne bloque pas les parcours publics, Auth, image et Contact", async ({ page }) => {
   const violations: string[] = [];
   page.on("console", (message) => {
-    if (/content security policy|violat(?:e|ion).*directive/i.test(message.text())) {
-      violations.push(message.text());
+    const text = message.text();
+    if (/content security policy|violat(?:e|ion).*directive/i.test(text)
+        && !isBlockedNetlifyPreviewToolbar(text)) {
+      violations.push(text);
     }
   });
 

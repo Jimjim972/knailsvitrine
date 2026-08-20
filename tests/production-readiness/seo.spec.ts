@@ -110,10 +110,12 @@ test("le JSON-LD local utilise uniquement les coordonnées confirmées et visibl
   await expect(page.getByText("+33 1 23 45 67 89")).toHaveCount(0);
 });
 
-test("le validateur public Schema.org retourne un graphe sans erreur", async ({ page }) => {
+test("le validateur public Schema.org retourne un graphe sans erreur", async ({ page, browserName }) => {
   const target = configuredOrigin();
   test.skip(["127.0.0.1", "localhost", "[::1]"].includes(target.hostname),
     "Schema.org ne peut pas récupérer une cible loopback");
+  test.skip(browserName !== "chromium" || page.viewportSize()?.width !== 1024,
+    "Le validateur externe est exécuté une seule fois par candidat hébergé");
   const validationUrl = "https://validator.schema.org/?hl=en-US#url=" +
     encodeURIComponent(new URL("/contact", target).href);
 

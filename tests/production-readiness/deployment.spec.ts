@@ -22,6 +22,10 @@ function configuredOrigin(): URL {
   return new URL(raw);
 }
 
+function isProductionTarget() {
+  return configuredOrigin().origin === CANONICAL_ORIGIN;
+}
+
 test("la cible hébergée présente un certificat accepté et sert les trois pages publiques", async ({ page }) => {
   const origin = configuredOrigin();
   if (origin.hostname !== "127.0.0.1" && origin.hostname !== "localhost" && origin.hostname !== "[::1]") {
@@ -44,6 +48,7 @@ test("/admin refuse une session absente et toutes ses réponses restent privées
 });
 
 test("le domaine canonique HTTPS présente un certificat valide et ne redirige pas", async ({ request }) => {
+  test.skip(!isProductionTarget(), "Les domaines finaux sont vérifiés après promotion par le smoke production");
   const response = await request.get(`${CANONICAL_ORIGIN}${REDIRECT_PROBE}`, { maxRedirects: 0 });
   expect(response.ok()).toBe(true);
   expect(response.url()).toBe(`${CANONICAL_ORIGIN}${REDIRECT_PROBE}`);
@@ -51,6 +56,7 @@ test("le domaine canonique HTTPS présente un certificat valide et ne redirige p
 
 for (const sourceOrigin of REDIRECT_SOURCE_ORIGINS) {
   test(`${sourceOrigin} redirige définitivement vers le domaine canonique sans perdre chemin ni query`, async ({ request }) => {
+    test.skip(!isProductionTarget(), "Les redirections finales sont vérifiées après promotion par le smoke production");
     const expectedDestination = `${CANONICAL_ORIGIN}${REDIRECT_PROBE}`;
     const firstResponse = await request.get(`${sourceOrigin}${REDIRECT_PROBE}`, { maxRedirects: 0 });
 
