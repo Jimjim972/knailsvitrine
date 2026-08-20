@@ -57,6 +57,13 @@ test("un échec qualité, typecheck, build ou unitaire reste un gate obligatoire
   }
 });
 
+test("le SEO local vérifie le contexte fermé sans valider à tort Schema.org externe", () => {
+  const seo = PROFILE_COMMANDS.local.find((definition) => definition.id === "seo");
+  assert.equal(seo?.env?.KN_SEO_PROFILE, "preview");
+  assert.equal(seo?.env?.PLAYWRIGHT_BASE_URL, "http://127.0.0.1:3000");
+  assert.equal(seo?.requirementIds.includes("SC-004"), false);
+});
+
 test("un changement de SHA et une sortie de commande invalide sont refusés", () => {
   assert.throws(() => assertFrozenSha(SHA, "d".repeat(40)), /candidate_sha_changed/);
   assert.throws(() => validateCommandResult({ exitCode: "0" }), /invalid_command_output/);
