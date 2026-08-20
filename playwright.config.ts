@@ -17,6 +17,7 @@ const webServerCommand = contactMode
 
 export default defineConfig({
   testDir: "./tests",
+  outputDir: "test-results/playwright",
   testMatch: contactMode
     ? ["contact-form/**/*.spec.ts"]
     : securityMode
