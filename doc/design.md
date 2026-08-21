@@ -225,6 +225,7 @@ Règles d'extension :
 
 - conserver une cible tactile minimale de 44 × 44 px ;
 - fermer le menu après navigation ;
+- fermer aussi le menu mobile avec Échap, puis restaurer le focus sur son bouton ;
 - maintenir `aria-expanded` et un nom accessible dynamique ;
 - ne pas ajouter de contenu qui augmente fortement la hauteur du header ;
 - ajouter un vrai style `:focus-visible` aux liens et au bouton de menu.
@@ -360,6 +361,8 @@ Le footer repose sur un fond gris doux et une grille de quatre colonnes : marque
 
 Les liens sont soulignés d'un trait doré transparent et deviennent dorés au survol. Le copyright est séparé par une bordure supérieure et utilise `--muted` sans transparence afin de conserver un contraste AA sur le fond gris doux.
 
+Les CTA de prestation et les liens autonomes du pied de page occupent au moins 44 px de hauteur. Les cartes Galerie liées révèlent également leur légende au focus clavier ; sur mobile, la légende reste visible sans survol.
+
 ## 9. Mouvement et interactions
 
 ### 9.1 Durées existantes
@@ -399,6 +402,7 @@ Les liens sont soulignés d'un trait doré transparent et deviennent dorés au s
 | `spa-products.jpg` | Journal social |
 | `berry-manicure.jpg` | Journal social |
 | `map-paris.jpg` | Illustration de localisation temporaire |
+| `app/opengraph-image.png` | Aperçu social Open Graph final, 1 200 × 630 px |
 
 ### 10.2 Direction photographique
 
@@ -425,6 +429,19 @@ Les liens sont soulignés d'un trait doré transparent et deviennent dorés au s
 - contenu important éloigné des bords susceptibles d'être rognés par `object-fit: cover`.
 
 Le logo actuel pèse nettement plus lourd que les autres assets et devra être optimisé avant la production sans dégrader sa netteté.
+
+### 10.4 Aperçu social Open Graph
+
+L’asset `app/opengraph-image.png` prolonge l’identité existante sans créer une
+nouvelle direction visuelle : fond crème et rose poudré, détails dorés, prune de
+marque, ambiance d’institut lumineuse et manucure rose aux accents dorés. Sa
+composition 1 200 × 630 conserve le logo et les textes dans une zone sûre à gauche
+et la photographie à droite afin de supporter les recadrages des plateformes.
+
+Le texte visible est limité à « K’nails Beauty Institut » et « Élégance, beauté &
+bien-être en Martinique ». Son texte alternatif est « K'nails Beauty Institut —
+élégance, beauté et bien-être en Martinique ». Aucun téléphone, réseau social,
+adresse, prix ou service non confirmé ne doit être ajouté à cet asset.
 
 ## 11. Ton éditorial
 

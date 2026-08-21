@@ -1,7 +1,7 @@
 import {
   CONTACT_FORM_ENDPOINT,
-  CONTACT_FORM_NAME,
   CONTACT_SUBMISSION_TIMEOUT_MS,
+  type ContactFormName,
 } from "./constants.ts";
 import type {
   ContactErrorKind,
@@ -25,6 +25,7 @@ type TransportDependencies = {
 
 export async function submitContactToNetlify(
   submission: NormalizedContactSubmission,
+  formName: ContactFormName,
   dependencies: TransportDependencies = {},
 ): Promise<ContactProviderResult> {
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -39,7 +40,7 @@ export async function submitContactToNetlify(
   }, CONTACT_SUBMISSION_TIMEOUT_MS);
 
   const body = new URLSearchParams({
-    "form-name": CONTACT_FORM_NAME,
+    "form-name": formName,
     "submission-id": submission.submissionId,
     name: submission.name,
     phone: submission.phone,

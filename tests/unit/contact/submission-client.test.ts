@@ -16,7 +16,7 @@ const SUBMISSION: NormalizedContactSubmission = {
 test("the browser transport posts the exact URL-encoded contract to a fixed relative target", async () => {
   let capturedInput: string | URL | Request = "";
   let capturedInit: RequestInit | undefined;
-  const result = await submitContactToNetlify(SUBMISSION, {
+  const result = await submitContactToNetlify(SUBMISSION, "contact", {
     fetchImpl: async (input, init) => {
       capturedInput = input;
       capturedInit = init;
@@ -51,7 +51,7 @@ test("only 2xx is accepted and failures remain closed without retry", async () =
 
   for (const scenario of scenarios) {
     let calls = 0;
-    const result = await submitContactToNetlify(SUBMISSION, {
+    const result = await submitContactToNetlify(SUBMISSION, "contact", {
       fetchImpl: async () => {
         calls += 1;
         return scenario.response();
@@ -70,7 +70,7 @@ test("the browser fetch aborts at the unique 10 000 ms deadline", async () => {
   let markFetchStarted: (() => void) | undefined;
   const fetchStarted = new Promise<void>((resolve) => { markFetchStarted = resolve; });
 
-  const operation = submitContactToNetlify(SUBMISSION, {
+  const operation = submitContactToNetlify(SUBMISSION, "contact", {
     fetchImpl: async (_input, init) => {
       fetchCalls += 1;
       markFetchStarted?.();

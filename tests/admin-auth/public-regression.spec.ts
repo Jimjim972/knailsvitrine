@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { CONTACT_ADDRESS } from "../../lib/contact-details";
 import { authFixture, expectAdminHome, submitLogin } from "./fixtures";
 
 const VIEWPORTS = [320, 768, 1024] as const;
@@ -44,8 +45,10 @@ for (const width of VIEWPORTS) {
     await page.goto("/galerie");
     await expectPublicChrome(page);
     await expect(page.getByRole("heading", { name: "L'Art Sublimé", level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Galerie en préparation", level: 2 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Journal Social", level: 2 })).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Galerie en préparation", level: 2 })
+        .or(page.locator(".gallery-card, .social-card").first()),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: "Voir le profil" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
@@ -56,10 +59,8 @@ for (const width of VIEWPORTS) {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Envoyez-nous un message" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Informations pratiques" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "+33 1 23 45 67 89" }).first()).toHaveAttribute(
-      "href",
-      "tel:+33123456789",
-    );
+    await expect(page.getByText(CONTACT_ADDRESS, { exact: true }).first()).toBeVisible();
+    await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
 }

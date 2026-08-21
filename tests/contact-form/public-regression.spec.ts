@@ -163,6 +163,6 @@ test("services, gallery, and non-form contact content keep their public structur
   await expect(page.getByText("Mercredi : Fermé").first()).toBeVisible();
   await expect(page.getByText("Samedi : 08h00 – 12h00").first()).toBeVisible();
   await expect(page.getByText("Dimanche : Fermé").first()).toBeVisible();
-  await expect(page.locator(".contact-sidebar").getByRole("link", { name: "+33 1 23 45 67 89" })).toHaveAttribute("href", "tel:+33123456789");
+  await expect(page.getByText("+33 1 23 45 67 89")).toHaveCount(0);
   await expect(page.getByAltText("Plan stylisé de Saint-Joseph en Martinique")).toBeVisible();
 });

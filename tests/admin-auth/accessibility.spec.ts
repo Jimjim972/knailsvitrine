@@ -1,5 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { expectAccessibilityScans } from "../helpers/accessibility";
 import { authFixture, expectAdminHome, submitLogin } from "./fixtures";
 
 const VIEWPORTS = [
@@ -26,7 +26,7 @@ async function expectMinimumTarget(locator: import("@playwright/test").Locator) 
 test("login validation is labelled, associated, focused, and free of detectable Axe violations", async ({
   page,
   browserName,
-}) => {
+}, testInfo) => {
   await page.goto("/admin/connexion");
   const email = page.getByLabel("Adresse e-mail");
   const password = page.getByLabel("Mot de passe");
@@ -49,8 +49,7 @@ test("login validation is labelled, associated, focused, and free of detectable 
   await expect(page.locator("#admin-password-error")).toBeVisible();
   await expect(email).toBeFocused();
 
-  const accessibility = await new AxeBuilder({ page }).analyze();
-  expect(accessibility.violations).toEqual([]);
+  await expectAccessibilityScans(page, testInfo, "auth-login-invalid");
 });
 
 test("login pending appears within one second and repeated activation submits one POST", async ({ page }) => {

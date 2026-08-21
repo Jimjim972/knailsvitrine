@@ -25,7 +25,11 @@ export function validatePublicSupabaseEnv(input: {
       (!isSecureRemote && !isLocalHttp)
       || url.username
       || url.password
+      || url.pathname !== "/"
+      || url.search
       || url.hash
+      || url.origin !== values.NEXT_PUBLIC_SUPABASE_URL
+      || /service_role|sb_secret_/i.test(values.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
     ) {
       throw new Error("Invalid transport");
     }

@@ -12,7 +12,7 @@ export function GalleryList({ result }: { result: AdminGalleryPage }) {
   return <>
     <p className="admin-list-count" role="status">{result.total} photo{result.total > 1 ? "s" : ""}</p>
     <ul className="admin-gallery-list">
-      {result.photos.map((photo) => <li key={photo.id} className="admin-gallery-item" data-photo-id={photo.id}>
+      {result.photos.map((photo) => <li key={photo.id} className="admin-gallery-item" data-photo-id={photo.id} data-file-state={photo.fileState}>
         <AdminGalleryThumbnail photoId={photo.id} src={photo.thumbnailUrl} width={photo.width} height={photo.height} auditable={photo.fileState === "ready"} />
         <div className="admin-gallery-copy">
           <h2>{photo.title ?? photo.altText}</h2>

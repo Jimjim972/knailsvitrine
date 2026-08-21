@@ -179,11 +179,11 @@ Le formulaire devra :
 
 Les règles initiales des champs sont : nom obligatoire de 2 à 120 caractères, e-mail obligatoire de 254 caractères maximum avec un format exploitable, téléphone facultatif de 6 à 30 caractères contenant au moins six chiffres lorsqu'il est renseigné, et message obligatoire de 10 à 2 000 caractères. Les espaces périphériques sont supprimés avant validation. Le téléphone peut contenir `+`, espaces, points, tirets et parenthèses afin de prendre en charge les formats locaux et internationaux usuels.
 
-Le navigateur remet d'abord la saisie à une Server Action Next.js. Celle-ci revalide les données avec Zod et retourne uniquement un instantané normalisé autorisé. Le navigateur ajoute ensuite les champs techniques réservés au fournisseur et envoie cette charge URL-encodée vers le chemin relatif constant `/__forms.html`, sans cookies. Le formulaire React ne déclare pas `form-name` dans sa requête vers la Server Action ; la garde Edge laisse donc cette étape atteindre Next.js, tout en revalidant tout POST qui déclare `form-name=contact` avant Netlify Forms.
+Le navigateur remet d'abord la saisie à une Server Action Next.js. Celle-ci revalide les données avec Zod et retourne uniquement un instantané normalisé autorisé. Le navigateur ajoute ensuite les champs techniques réservés au fournisseur et envoie cette charge URL-encodée vers le chemin relatif constant `/__forms.html`, sans cookies. Le formulaire React ne déclare pas `form-name` dans sa requête vers la Server Action ; la garde Edge laisse donc cette étape atteindre Next.js. Le contexte Netlify de confiance sélectionne ensuite `contact` en production et `contact-preview` en Deploy Preview, branch deploy ou développement, et tout POST qui déclare l'autre nom est refusé avant Netlify Forms.
 
 Le formulaire présente quatre états distincts et accessibles : neutre, envoi en cours, envoi réussi et erreur récupérable. Une erreur conserve les quatre valeurs et n'affiche jamais de faux succès ; seule l'autorisation serveur suivie d'une réponse HTTP positive de Netlify autorise le succès visible et vide les champs, sans prétendre connaître le classement anti-spam final. L'appel fournisseur expire exactement 10 secondes après le démarrage du `fetch` navigateur ; ce délai indique honnêtement que la réception n'a pas pu être confirmée. Les demandes vérifiées sont consultées dans l'interface Netlify du MVP, sans ajouter de boîte de réception à `/admin`.
 
-La notification Netlify est configurée vers une adresse opérationnelle confirmée de l'institut et n'est déclenchée que pour les soumissions vérifiées. L'adresse destinataire n'est pas versionnée. Cette fonctionnalité n'envoie pas d'autoréponse e-mail au visiteur.
+Netlify détecte deux blueprints statiques, `contact` et `contact-preview`. Chacun possède sa propre notification `submission_created`, bornée par l'identifiant et le nom du formulaire ; la notification preview utilise en plus un objet explicitement identifié comme preview. Les destinations sont configurées dans Netlify, ne sont pas versionnées et peuvent être identiques sans fusionner les deux hooks. Une notification n'est déclenchée que pour une soumission vérifiée, l'e-mail du visiteur alimente le `Reply-To`, et aucune autoréponse n'est envoyée au visiteur.
 
 Si Netlify Forms s'avère incompatible avec le besoin final, la solution de remplacement devra être décidée avant implémentation : envoi par un fournisseur d'e-mail transactionnel ou stockage sécurisé dans Supabase avec protection anti-spam.
 
@@ -289,8 +289,15 @@ Le déploiement doit utiliser :
 - `npm run build` comme commande de construction ;
 - le dépôt GitHub comme source ;
 - une branche principale pour la production ;
-- des variables d'environnement distinctes entre développement et production ;
-- un domaine personnalisé avec HTTPS.
+- des variables d'environnement distinctes entre production, Deploy Preview et branch deploy ;
+- un projet Supabase non-production isolé pour Deploy Preview et branch deploy, sans copie des données de production ;
+- les trois seules variables applicatives `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` et `SERVICE_SUCCESS_FLASH_SECRET`, ce dernier étant aléatoire, secret, distinct par contexte et long d'au moins 32 caractères ;
+- aucune variable ponctuelle `SUPABASE_GALLERY_CONFIG_*` dans Netlify ;
+- une origine publique canonique unique `https://knailsbeauty.fr`, sans `www`, protégée par un certificat valide ;
+- `www.knailsbeauty.fr`, `knailsbeauty.com`, `www.knailsbeauty.com` et le sous-domaine technique Netlify comme entrées exclusivement redirectrices, chacune protégée par un certificat lorsqu'elle est demandée en HTTPS ;
+- une redirection permanente de toutes les variantes HTTP et HTTPS non canoniques vers `https://knailsbeauty.fr`, en conservant le chemin et les paramètres de requête, sans règle applicable à l'origine canonique elle-même et donc sans boucle.
+
+Le domaine `knailsbeauty.com` ne sert jamais directement de contenu et ne peut pas devenir canonique : son apex et son alias `www` redirigent exclusivement vers le domaine `.fr` sans `www`.
 
 Les déploiements de production doivent rester intentionnels, car chacun consomme une partie des crédits de l'offre gratuite.
 
@@ -479,7 +486,9 @@ La configuration ponctuelle du bucket galerie constitue un cas distinct du runti
 
 ### 12.2 Accessibilité
 
-- respecter au minimum WCAG 2.1 niveau AA pour les parcours principaux ;
+- respecter WCAG 2.1 niveaux A et AA sur les pages complètes, leurs états représentatifs et les processus complets ;
+- exécuter pour chaque état un scan Axe borné aux tags WCAG 2.1 A/AA sans aucune violation, tous impacts confondus, puis un scan général distinct sans anomalie sérieuse ou critique ;
+- conserver les deux résultats JSON complets avec la preuve Playwright, sans exclusion ni règle désactivée sauf dérogation explicite, datée, bornée et liée à une correction ;
 - navigation complète au clavier ;
 - focus visible ;
 - libellé explicite pour chaque champ ;
@@ -488,14 +497,21 @@ La configuration ponctuelle du bucket galerie constitue un cas distinct du runti
 - textes alternatifs obligatoires pour les images porteuses d'information ;
 - éléments décoratifs ignorés par les technologies d'assistance ;
 - annonces de succès et d'erreur avec une région de statut adaptée.
+- absence de défilement horizontal global à l'équivalent de 320 CSS px, indépendamment du contrôle distinct à 200 % de zoom ;
+- cibles de contrôle du design d'au moins 44 × 44 CSS px, hors lien réellement inline dans un texte ;
+- réduction des mouvements non essentiels lorsque `prefers-reduced-motion: reduce` est actif ;
+- les scans automatisés ne remplacent jamais la revue manuelle Firefox, Safari mobile physique et technologie d'assistance.
 
 ### 12.3 Référencement
 
-- métadonnées uniques pour les pages principales ;
-- titres et descriptions cohérents avec l'activité réelle ;
-- sitemap et robots configurés ;
-- balises Open Graph pour le partage ;
-- données structurées de type entreprise locale lorsque l'adresse, le téléphone et les horaires définitifs seront connus ;
+- `/services`, `/galerie` et `/contact` possèdent chacune un titre, une description, un canonical absolu et un Open Graph uniques ;
+- l'unique origine SEO est `https://knailsbeauty.fr`, indépendamment de l'hôte entrant, de `www`, du `.com` ou d'une Deploy Preview ;
+- en production canonique, le sitemap contient exactement ces trois pages et `robots.txt` autorise le public, exclut `/admin` et référence le sitemap ;
+- hors production, toutes les pages sont `noindex, nofollow`, `robots.txt` refuse toute exploration et le sitemap ne contient aucune URL ;
+- l'administration, connexion comprise, reste `noindex, nofollow` dans tous les contextes et n'expose aucun canonical ;
+- l'image Open Graph finale mesure 1 200 × 630 px et n'affiche aucune coordonnée non confirmée ;
+- le JSON-LD `BeautySalon` contient uniquement le nom, l'URL canonique, l'adresse et les horaires confirmés visibles ; aucun téléphone, réseau ou image n'est publié avant confirmation ;
+- la syntaxe et la cohérence sont contrôlées localement, puis le document hébergé est soumis au validateur public Schema.org avec zéro erreur ; un résultat externe indisponible ou inclassable reste bloquant ;
 - contenu principal rendu côté serveur afin d'être lisible sans exécution JavaScript côté client.
 
 ### 12.4 Responsive
@@ -588,6 +604,14 @@ Les scénarios suivants doivent être exécutés avec les rôles réels :
 
 La fondation Supabase vérifie séparément les droits de suppression de la ligne et du fichier. Le workflow applicatif de galerie coordonne désormais les deux ressources par une opération durable, un masquage préalable et une reprise idempotente des échecs partiels ; le scénario 7 en reste le critère de validation.
 
+La préparation à la production sépare obligatoirement trois gates :
+
+- la pile locale exécute les contrats SQL, Auth et Storage reproductibles ;
+- une Deploy Preview liée au SHA exécute, après garde de cible et autorisation explicite, une matrice mutable avec sessions anon, authentifiée non-admin et admin réelles ; les UUID, objets et identités de test sont tous supprimés et leur absence est relue avant succès ;
+- la production reçoit uniquement l'inventaire en lecture seule des GRANT, RLS, politiques, Auth, advisors, SSL et restrictions réseau tant qu'une mutation n'a pas été autorisée séparément.
+
+La clé secrète temporairement obtenue pour une recette preview sert exclusivement à créer et supprimer les identités de fixture. Les assertions d'autorisation utilisent la clé publiable et les sessions réelles ; les lignes de test sont préparées par l'administrateur courant et nettoyées par la capacité de maintenance, jamais par un contournement utilisé comme preuve RLS. Tout échec de nettoyage, warning advisor, inscription ouverte, SSL base désactivé ou clé legacy compromise maintient la décision `not_ready`.
+
 ### 15.3 Vérifications fonctionnelles
 
 - affichage correct des trois catégories initiales et de toute nouvelle catégorie contenant une prestation active ;
@@ -609,6 +633,14 @@ La fondation Supabase vérifie séparément les droits de suppression de la lign
 - les neuf WebP initiaux conservent l'image complète sans recadrage ni déformation, respectent les dimensions manifestées à un pixel d'arrondi près et obtiennent un SSIM >=0,97 face à leur source opaque orientée, convertie sRGB et redimensionnée aux dimensions exactes de sortie ; le calcul porte sur `Y=0,299R+0,587G+0,114B` en sRGB 8 bits non linéaire, avec fenêtre gaussienne 11×11 sigma 1,5, `K1=0,01`, `K2=0,03`, `L=255`, extension réfléchie et moyenne des fenêtres centrées sur tous les pixels ;
 - un utilisateur cible non technique ajoute et retrouve une photo publique en moins de 3 minutes sans aide, puis réussit au moins 4 des 5 tâches standardisées — retrouver une photo masquée, ajouter, corriger l'alt, remplacer et supprimer — dès la première tentative sans indice.
 - le contrôle froid et la preview respectent le budget galerie de deux demandes/2 Mio avant défilement et neuf invocations/9 Mio par consultation complète, sans doublon d'ID ; le rapport consigne l'extrapolation à 1 000 consultations et la comparaison aux quotas Netlify officiels du jour.
+
+### 15.4 Décision de préparation production
+
+Le manifeste de recette inventorie exactement les 56 exigences de préparation, les 16 critères de succès, les 13 critères d'acceptation de la section 16 et les 72 gates des fonctionnalités 001 à 005. Une source absente, supplémentaire, dupliquée, modifiée ou associée à un autre SHA est refusée. Chaque exigence pointe vers au moins une preuve datée et expurgée ; une preuve obligatoire sans artefact, une preuve manuelle non signée ou une preuve antérieure au gel est invalide.
+
+`npm run production:check` exécute le profil local et produit un rapport honnête même lorsque les contrôles hébergés ou humains restent `not_run`; ce rapport ne peut alors pas autoriser la promotion. Après gel, `npm run production:preview-check` exécute une seule fois la garde et les cinq specs hébergées, puis agrège les preuves humaines déjà réellement signées. Ces commandes ne simulent jamais Safari physique, Firefox réel, VoiceOver, la revue visuelle, une restauration ou un réglage fournisseur.
+
+Après promotion du SHA approuvé, `npm run production:smoke` exige une autorisation explicite pour la soumission Contact et des identifiants administrateur injectés uniquement dans le processus. Il exécute exactement les onze cas contractuels sur `https://knailsbeauty.fr`. La décision reste `not_ready` si un seul cas échoue, si le SHA/deploy diverge, si un risque majeur ou critique subsiste, ou si les deux assets finaux ne sont pas retrouvés avec les mêmes digests dans une GitHub Release publiée et immuable.
 
 ## 16. Critères d'acceptation du MVP
 

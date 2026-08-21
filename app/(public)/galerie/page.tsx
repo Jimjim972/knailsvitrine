@@ -4,8 +4,9 @@ import { GalleryGrid } from "@/components/gallery-grid";
 import { SocialGallery } from "@/components/social-gallery";
 import { getPublicGalleryPhotos } from "@/lib/data/gallery";
 import { partitionPublicGalleryPhotos } from "@/lib/gallery/mappers";
+import { buildPageMetadata } from "@/lib/site/metadata";
 
-export const metadata: Metadata = { title: "Galerie", description: "Explorez les créations et l'univers de K'nails Beauty Institut." };
+export const metadata: Metadata = buildPageMetadata("/galerie");
 
 export default async function GaleriePage() {
   const photos = await getPublicGalleryPhotos();

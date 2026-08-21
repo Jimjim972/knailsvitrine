@@ -1,5 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expectAccessibilityScans } from "../helpers/accessibility";
 import { authFixture, expectAdminHome, submitLogin } from "./local-supabase";
 
 async function tabTo(page: Page, target: Locator, tabKey: "Tab" | "Alt+Tab", limit = 80) {
@@ -46,13 +46,8 @@ async function expectTouchTargets(page: Page, selector: string) {
   }
 }
 
-async function expectNoSeriousAxeViolation(page: Page) {
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
-}
-
 for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVABLE_ADMIN"], [1024, "LOGOUT_ERROR_ADMIN"]] as const) {
-  test(`services admin is keyboard and touch accessible at ${width}px`, async ({ page, browserName }) => {
+  test(`services admin is keyboard and touch accessible at ${width}px`, async ({ page, browserName }, testInfo) => {
     test.skip(Boolean(process.env.KN_SERVICE_E2E_SCENARIO), "Real-data suite");
     await page.setViewportSize({ width, height: 900 });
     const admin = authFixture(fixtureName);
@@ -66,7 +61,7 @@ for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVA
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await expect(page.getByRole("status").filter({ hasText: /prestations?/ })).toBeVisible();
     await expectTouchTargets(page, ".admin-nav a, .admin-page-header .admin-button, .admin-text-action, .admin-logout-button");
-    await expectNoSeriousAxeViolation(page);
+    await expectAccessibilityScans(page, testInfo, `services-list-${width}`);
 
     const createLink = page.getByRole("link", { name: "Nouvelle prestation" });
     await tabTo(page, createLink, navigationTabKey);
@@ -76,7 +71,7 @@ for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVA
     await expect(page.getByLabel("Nom")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await expectTouchTargets(page, ".admin-field-control input, .admin-field-control select, .admin-field-control textarea, .admin-checkbox, .admin-form-actions .admin-button");
-    await expectNoSeriousAxeViolation(page);
+    await expectAccessibilityScans(page, testInfo, `services-create-${width}`);
 
     for (const control of [
       page.getByLabel("Nom"),
@@ -145,7 +140,7 @@ for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVA
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Annuler" })).toBeFocused();
     await expectTouchTargets(page, ".admin-delete-dialog .admin-button");
-    await expectNoSeriousAxeViolation(page);
+    await expectAccessibilityScans(page, testInfo, `services-delete-dialog-${width}`);
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
     await expect(deleteTrigger).toBeFocused();
@@ -154,7 +149,7 @@ for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVA
     await expect(page.getByRole("heading", { name: "Catégories", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await expectTouchTargets(page, ".admin-page-header .admin-button, .admin-category-item .admin-text-action");
-    await expectNoSeriousAxeViolation(page);
+    await expectAccessibilityScans(page, testInfo, `categories-list-${width}`);
 
     const firstCategory = page.locator(".admin-category-item").first();
     const editCategory = firstCategory.getByRole("link", { name: "Modifier" });
@@ -175,7 +170,7 @@ for (const [width, fixtureName] of [[320, "EXPIRABLE_ADMIN"], [768, "ROLE_REMOVA
     const categoryDialog = page.getByRole("dialog", { name: "Supprimer la catégorie ?" });
     await expect(categoryDialog).toBeVisible();
     await expect(categoryDialog.getByRole("button", { name: "Annuler" })).toBeFocused();
-    await expectNoSeriousAxeViolation(page);
+    await expectAccessibilityScans(page, testInfo, `categories-delete-dialog-${width}`);
     await page.keyboard.press("Escape");
     await expect(categoryDialog).not.toBeVisible();
     await expect(deleteCategoryTrigger).toBeFocused();

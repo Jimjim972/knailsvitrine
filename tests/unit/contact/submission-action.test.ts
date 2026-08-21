@@ -42,6 +42,7 @@ test("the action ignores provider-controlled fields and returns only an authoriz
   assert.deepEqual(state, {
     phase: "authorized",
     submissionId: SUBMISSION_ID,
+    formName: "contact-preview",
     submission: {
       submissionId: SUBMISSION_ID,
       name: "Jeanne Martin",
@@ -103,5 +104,18 @@ test("a filled honeypot remains opaque and is included in the authorized snapsho
   assert.equal(state.phase, "authorized");
   if (state.phase !== "authorized") assert.fail("expected an authorized state");
   assert.equal(state.submission.botField, "filled");
-  assert.deepEqual(Object.keys(state).sort(), ["phase", "submission", "submissionId"]);
+  assert.deepEqual(Object.keys(state).sort(), ["formName", "phase", "submission", "submissionId"]);
+});
+
+test("the server authorizes the production form only in production", async () => {
+  const production = await executeContactSubmission(contactForm(), "production");
+  const preview = await executeContactSubmission(contactForm(), "deploy_preview");
+
+  assert.equal(production.phase, "authorized");
+  assert.equal(preview.phase, "authorized");
+  if (production.phase !== "authorized" || preview.phase !== "authorized") {
+    assert.fail("both valid submissions must be authorized");
+  }
+  assert.equal(production.formName, "contact");
+  assert.equal(preview.formName, "contact-preview");
 });

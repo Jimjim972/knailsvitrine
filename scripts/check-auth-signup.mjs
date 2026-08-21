@@ -15,6 +15,13 @@ class UnusedRealtimeTransport {
   }
 }
 
+function newClient(apiUrl, key) {
+  return createClient(apiUrl, key, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    realtime: { transport: UnusedRealtimeTransport },
+  });
+}
+
 function readLocalStatus() {
   const child = spawnSync("npx", ["supabase", "status", "--output", "json"], {
     cwd: process.cwd(),
@@ -79,19 +86,17 @@ async function main() {
   const fixtureToken = randomUUID();
   const email = `foundation-${fixtureToken}@example.invalid`;
   const otpEmail = `foundation-otp-${fixtureToken}@example.invalid`;
+  const spoofEmail = `foundation-spoof-${fixtureToken}@example.invalid`;
+  const downgradedEmail = `foundation-downgraded-${fixtureToken}@example.invalid`;
+  const revokedEmail = `foundation-revoked-${fixtureToken}@example.invalid`;
   const phone = `+1555${fixtureToken.replaceAll("-", "").slice(0, 7)}`;
+  const fixturePassword = `Local-${fixtureToken}-9!`;
   let adminClient;
 
   try {
     const { apiUrl, publicKey, fixtureCapability } = readLocalStatus();
-    const publicClient = createClient(apiUrl, publicKey, {
-      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-      realtime: { transport: UnusedRealtimeTransport },
-    });
-    adminClient = createClient(apiUrl, fixtureCapability, {
-      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-      realtime: { transport: UnusedRealtimeTransport },
-    });
+    const publicClient = newClient(apiUrl, publicKey);
+    adminClient = newClient(apiUrl, fixtureCapability);
 
     const config = readFileSync("supabase/config.toml", "utf8");
     const inventory = configInventory(config);
@@ -106,7 +111,7 @@ async function main() {
 
     const emailAttempt = await publicClient.auth.signUp({
       email,
-      password: `Local-${fixtureToken}-9!`,
+      password: fixturePassword,
     });
     const emailRefused = emailAttempt.error?.code === "signup_disabled"
       && !emailAttempt.data.user
@@ -131,16 +136,22 @@ async function main() {
       email: otpEmail,
       options: { shouldCreateUser: true },
     });
+    const otpRefused = Boolean(otpAttempt.error)
+      && !otpAttempt.data.user
+      && !otpAttempt.data.session;
     results.push(
-      otpAttempt.error
-        ? pass("authorization.auth.otp_signup", "OTP and magic-link identity creation is refused")
+      otpRefused
+        ? pass("authorization.auth.otp_signup", "OTP and magic-link identity creation is refused without identity or session")
         : fail("authorization.auth.otp_signup", "authorization", "OTP identity creation was not refused"),
     );
 
     const smsAttempt = await publicClient.auth.signInWithOtp({ phone });
+    const smsRefused = Boolean(smsAttempt.error)
+      && !smsAttempt.data.user
+      && !smsAttempt.data.session;
     results.push(
-      smsAttempt.error
-        ? pass("authorization.auth.sms_signup", "SMS identity creation is refused")
+      smsRefused
+        ? pass("authorization.auth.sms_signup", "SMS identity creation is refused without identity or session")
         : fail("authorization.auth.sms_signup", "authorization", "SMS identity creation was not refused"),
     );
 
@@ -155,6 +166,86 @@ async function main() {
     for (const user of unexpectedUsers) {
       await adminClient.auth.admin.deleteUser(user.id);
     }
+
+    const spoofCreation = await adminClient.auth.admin.createUser({
+      email: spoofEmail,
+      password: fixturePassword,
+      email_confirm: true,
+      user_metadata: { role: "admin" },
+    });
+    if (spoofCreation.error || !spoofCreation.data.user) {
+      throw new Error("Unable to create metadata spoof fixture");
+    }
+    const spoofClient = newClient(apiUrl, publicKey);
+    const spoofLogin = await spoofClient.auth.signInWithPassword({ email: spoofEmail, password: fixturePassword });
+    if (spoofLogin.error || !spoofLogin.data.session) {
+      throw new Error("Unable to authenticate metadata spoof fixture");
+    }
+    const spoofAuthorization = await spoofClient.rpc("is_current_admin");
+    results.push(
+      !spoofAuthorization.error && spoofAuthorization.data === false
+        ? pass("authorization.auth.user_metadata_spoof", "User-controlled metadata never grants administration")
+        : fail("authorization.auth.user_metadata_spoof", "authorization", "User-controlled metadata affected administration"),
+    );
+
+    const downgradedCreation = await adminClient.auth.admin.createUser({
+      email: downgradedEmail,
+      password: fixturePassword,
+      email_confirm: true,
+      app_metadata: { role: "admin" },
+    });
+    if (downgradedCreation.error || !downgradedCreation.data.user) {
+      throw new Error("Unable to create downgrade fixture");
+    }
+    const downgradedClient = newClient(apiUrl, publicKey);
+    const downgradedLogin = await downgradedClient.auth.signInWithPassword({ email: downgradedEmail, password: fixturePassword });
+    if (downgradedLogin.error || !downgradedLogin.data.session) {
+      throw new Error("Unable to authenticate downgrade fixture");
+    }
+    const initialAdminAuthorization = await downgradedClient.rpc("is_current_admin");
+    results.push(
+      !initialAdminAuthorization.error && initialAdminAuthorization.data === true
+        ? pass("authorization.auth.current_admin", "Current protected metadata and live session grant administration")
+        : fail("authorization.auth.current_admin", "authorization", "Current administrator was not authorized"),
+    );
+    const downgrade = await adminClient.auth.admin.updateUserById(downgradedCreation.data.user.id, {
+      app_metadata: { role: "member" },
+    });
+    if (downgrade.error) throw new Error("Unable to downgrade Auth fixture");
+    const downgradedAuthorization = await downgradedClient.rpc("is_current_admin");
+    results.push(
+      !downgradedAuthorization.error && downgradedAuthorization.data === false
+        ? pass("authorization.auth.downgrade", "A database-side downgrade defeats stale admin claims on the next check")
+        : fail("authorization.auth.downgrade", "authorization", "A downgraded identity retained administration"),
+    );
+
+    const revokedCreation = await adminClient.auth.admin.createUser({
+      email: revokedEmail,
+      password: fixturePassword,
+      email_confirm: true,
+      app_metadata: { role: "admin" },
+    });
+    if (revokedCreation.error || !revokedCreation.data.user) {
+      throw new Error("Unable to create revoked-session fixture");
+    }
+    const revokedClient = newClient(apiUrl, publicKey);
+    const revokedLogin = await revokedClient.auth.signInWithPassword({ email: revokedEmail, password: fixturePassword });
+    const accessToken = revokedLogin.data.session?.access_token;
+    if (revokedLogin.error || !accessToken) {
+      throw new Error("Unable to authenticate revoked-session fixture");
+    }
+    const preRevocation = await revokedClient.rpc("is_current_admin");
+    if (preRevocation.error || preRevocation.data !== true) {
+      throw new Error("Revoked-session fixture was not initially authorized");
+    }
+    const revocation = await adminClient.auth.admin.signOut(accessToken, "global");
+    if (revocation.error) throw new Error("Unable to revoke Auth fixture session");
+    const postRevocation = await revokedClient.rpc("is_current_admin");
+    results.push(
+      postRevocation.data !== true
+        ? pass("authorization.auth.revoked_session", "A revoked session loses administration on the next check")
+        : fail("authorization.auth.revoked_session", "authorization", "A revoked session retained administration"),
+    );
   } catch {
     results.push(fail("internal.auth.check", "internal", "Local Auth verification could not complete"));
   } finally {

@@ -1,7 +1,13 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import {
+  CONTACT_PREVIEW_FORM_NAME,
+  contactFormNameForNetlifyContext,
+} from "../../lib/contact/constants";
 
 const SUCCESS_MESSAGE = "Merci, votre message a bien été envoyé.";
 const PENDING_MESSAGE = "Envoi du message en cours…";
+const EXPECTED_FORM_NAME = contactFormNameForNetlifyContext(process.env.CONTEXT) ??
+  CONTACT_PREVIEW_FORM_NAME;
 
 async function fillValidContactForm(page: Page, phone = "") {
   await page.getByLabel("Prénom & nom").fill("Élodie Martin");
@@ -47,7 +53,7 @@ test.describe("contact submission", () => {
     expect(actionPosts).toBe(1);
     expect(providerBodies).toHaveLength(1);
     expect(Object.fromEntries(new URLSearchParams(providerBodies[0]))).toMatchObject({
-      "form-name": "contact",
+      "form-name": EXPECTED_FORM_NAME,
       phone: "",
       "bot-field": "",
     });

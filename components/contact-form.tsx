@@ -69,7 +69,7 @@ export function ContactForm() {
       processedActionAttemptRef.current = attempt;
 
       if (actionState.phase === "authorized") {
-        void submitContactToNetlify(actionState.submission)
+        void submitContactToNetlify(actionState.submission, actionState.formName)
           .then((result) => {
             if (attempt !== attemptRef.current) return;
             inFlightRef.current = false;

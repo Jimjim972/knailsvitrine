@@ -122,6 +122,9 @@ a {
 
 .nav-link {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 10px 14px;
   border-radius: 999px;
   color: var(--muted);
@@ -153,6 +156,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
   padding: 12px 24px;
@@ -393,6 +397,9 @@ a {
 }
 
 .service-action a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 9px 14px;
   border: 1px solid var(--gold-light);
   border-radius: 999px;
@@ -458,6 +465,10 @@ a {
   opacity: 1;
 }
 
+.gallery-card:focus-visible .gallery-hover {
+  opacity: 1;
+}
+
 .gallery-caption {
   position: absolute;
   left: 26px;
@@ -469,6 +480,11 @@ a {
 }
 
 .gallery-card:hover .gallery-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.gallery-card:focus-visible .gallery-caption {
   opacity: 1;
   transform: translateY(0);
 }
@@ -568,6 +584,10 @@ a {
 }
 
 .social-card:hover .social-overlay {
+  opacity: 1;
+}
+
+.social-card:focus-visible .social-overlay {
   opacity: 1;
 }
 
@@ -851,6 +871,9 @@ a {
 }
 
 .footer-column a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--muted);
   font-size: 0.9rem;
   text-decoration: underline;
@@ -860,6 +883,15 @@ a {
 
 .footer-column a:hover {
   color: var(--gold);
+}
+
+.site-header :is(a, button):focus-visible,
+.service-action a:focus-visible,
+.gallery-card:focus-visible,
+.social-card:focus-visible,
+.site-footer a:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
 }
 
 .copyright {

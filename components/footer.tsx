@@ -26,7 +26,6 @@ export async function Footer() {
           <h2>Nous contacter</h2>
           <Link href="/contact">Contact & rendez-vous</Link>
           <p>{CONTACT_ADDRESS}</p>
-          <a href="tel:+33123456789">+33 1 23 45 67 89</a>
         </div>
         <div className="footer-column">
           <h2>Horaires</h2>

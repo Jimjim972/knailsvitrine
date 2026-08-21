@@ -12,10 +12,16 @@ const validFields = {
   "bot-field": "",
 };
 
-function urlEncodedRequest(path = "/__forms.html", patch: Record<string, string> = {}) {
+function urlEncodedRequest(
+  path = "/__forms.html",
+  patch: Record<string, string> = {},
+) {
   return new Request(`https://knails.example${path}`, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", "content-length": "999" },
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "content-length": "999",
+    },
     body: new URLSearchParams({ ...validFields, ...patch }),
   });
 }
@@ -43,6 +49,40 @@ test("laisse un POST Next/non-contact intact et sans lire son corps", async () =
   assert.equal(response.status, 204);
   assert.equal(spy.calls[0], request);
   assert.equal(await request.text(), "%24ACTION_ID=opaque&name=Marie");
+});
+
+test("accepte uniquement contact en production et contact-preview hors production", async () => {
+  for (const [context, formName] of [
+    ["production", "contact"],
+    ["deploy-preview", "contact-preview"],
+    ["branch-deploy", "contact-preview"],
+  ] as const) {
+    const spy = captureNext();
+    const response = await validateContactRequest(
+      urlEncodedRequest("/__forms.html", { "form-name": formName }),
+      spy.next,
+      context,
+    );
+    assert.equal(response.status, 204);
+    assert.equal(new URLSearchParams(await spy.calls[0]?.text()).get("form-name"), formName);
+  }
+});
+
+test("refuse le formulaire du mauvais contexte sans transmettre la demande", async () => {
+  for (const [context, formName] of [
+    ["production", "contact-preview"],
+    ["deploy-preview", "contact"],
+    ["branch-deploy", "contact"],
+  ] as const) {
+    const spy = captureNext();
+    const response = await validateContactRequest(
+      urlEncodedRequest("/__forms.html", { "form-name": formName }),
+      spy.next,
+      context,
+    );
+    assert.equal(response.status, 422);
+    assert.equal(spy.calls.length, 0);
+  }
 });
 
 test("laisse un Server Action multipart intact avant toute lecture Edge", async () => {

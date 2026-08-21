@@ -1,4 +1,75 @@
+[build]
+command = "npm run build"
+
+# Keep the same deterministic build entry point in every remote context.
+# Runtime values and secrets are configured in Netlify, never in this file.
+[context.production]
+command = "npm run build"
+
+[context.deploy-preview]
+command = "npm run build"
+
+[context.branch-deploy]
+command = "npm run build"
+
 [[edge_functions]]
 path = "/*"
 function = "validate-contact"
 
+# The canonical public origin is the HTTPS, non-www .fr domain. Host-qualified
+# rules cover every redirecting HTTP/HTTPS entry point without creating a rule
+# that can match https://knailsbeauty.fr itself. Netlify forwards query strings
+# for 301 redirects; :splat preserves the requested path.
+[[redirects]]
+from = "http://knailsbeauty.fr/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://www.knailsbeauty.fr/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://www.knailsbeauty.fr/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://knailsbeauty.com/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://knailsbeauty.com/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://www.knailsbeauty.com/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://www.knailsbeauty.com/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "http://friendly-cactus-227b77.netlify.app/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "https://friendly-cactus-227b77.netlify.app/*"
+to = "https://knailsbeauty.fr/:splat"
+status = 301
+force = true

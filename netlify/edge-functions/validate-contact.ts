@@ -1,5 +1,10 @@
 import type { Config, Context } from "@netlify/edge-functions";
 import { validateContactProviderValues } from "../../lib/validations/contact.ts";
+import {
+  CONTACT_FORM_NAMES,
+  contactFormNameForNetlifyContext,
+  type ContactFormName,
+} from "../../lib/contact/constants.ts";
 
 type NextRequest = (request?: Request) => Promise<Response>;
 
@@ -36,8 +41,9 @@ function mediaType(request: Request): string {
 
 function hasDetectableContactDeclaration(request: Request): boolean {
   const url = new URL(request.url);
-  return url.searchParams.get("form-name") === "contact"
-    || request.headers.get("x-netlify-form-name") === "contact";
+  const queryName = url.searchParams.get("form-name");
+  const headerName = request.headers.get("x-netlify-form-name");
+  return CONTACT_FORM_NAMES.some((name) => queryName === name || headerName === name);
 }
 
 function hasDuplicateOrFile(formData: FormData, fieldName: string): boolean {
@@ -59,9 +65,9 @@ function normalizedProviderBody(data: {
   email: string;
   message: string;
   botField: string;
-}): URLSearchParams {
+}, formName: ContactFormName): URLSearchParams {
   return new URLSearchParams({
-    "form-name": "contact",
+    "form-name": formName,
     "submission-id": data.submissionId,
     name: data.name,
     phone: data.phone,
@@ -74,6 +80,7 @@ function normalizedProviderBody(data: {
 export async function validateContactRequest(
   request: Request,
   next: NextRequest,
+  rawDeploymentContext = "production",
 ): Promise<Response> {
   if (request.method !== "POST") return next(request);
 
@@ -96,10 +103,14 @@ export async function validateContactRequest(
   }
 
   const formNames = formData.getAll("form-name");
-  const declaresContact = formNames.some((value) => value === "contact");
+  const declaresContact = formNames.some((value) =>
+    typeof value === "string" && CONTACT_FORM_NAMES.includes(value as ContactFormName)
+  );
   if (!declaresContact) return next(request);
 
   if (formNames.length !== 1 || typeof formNames[0] !== "string") return closedError(422);
+  const allowedFormName = contactFormNameForNetlifyContext(rawDeploymentContext);
+  if (!allowedFormName || formNames[0] !== allowedFormName) return closedError(422);
 
   const botValues = formData.getAll("bot-field");
   if (botValues.length === 1 && typeof botValues[0] === "string" && botValues[0].trim() !== "") {
@@ -110,7 +121,7 @@ export async function validateContactRequest(
     return closedError(422);
   }
 
-  const parsed = validateContactProviderValues(providerRecord(formData));
+  const parsed = validateContactProviderValues(providerRecord(formData), allowedFormName);
   if (!parsed.success) return closedError(422);
 
   const headers = new Headers(request.headers);
@@ -118,7 +129,7 @@ export async function validateContactRequest(
   headers.set("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
 
   const forwardedRequest = new Request(request, {
-    body: normalizedProviderBody(parsed.data),
+    body: normalizedProviderBody(parsed.data, allowedFormName),
     headers,
   });
   return next(forwardedRequest);
@@ -131,6 +142,7 @@ export default function validateContact(
   return validateContactRequest(
     request,
     (nextRequest) => nextRequest ? context.next(nextRequest) : context.next(),
+    context.deploy.context,
   );
 }
 
